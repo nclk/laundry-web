@@ -1,0 +1,15 @@
+*.swp
+*.swo
+target/
+linen-logs/
+.lein-repl-history
+npm-debug.log
+node_modules/
+.sutdata
+notes*
+test-data
+.http-mitm-proxy
+ca
+scrap
+bower_components
+index.html.bak

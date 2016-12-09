@@ -1,0 +1,36 @@
+{
+  "name": "laundry",
+  "version": "0.1.0",
+  "description": "A tool for gathering study materials for language learners.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js",
+    "start console": "electron main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/tjb1982/linnea.git"
+  },
+  "keywords": [
+    "Linnea",
+    "study materials",
+    "language",
+    "languages",
+    "learn",
+    "study",
+    "flash",
+    "cards"
+  ],
+  "author": "Tom Brennan",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "dependencies": {
+    "hoquet": "1.1.1"
+  },
+  "devDependencies": {
+    "electron-prebuilt": "^1.0.1"
+  }
+}
