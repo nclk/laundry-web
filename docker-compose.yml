@@ -1,0 +1,10 @@
+version: '2'
+services:
+  sutweb:
+    container_name: sutweb
+    build: .
+    ports:
+    - "80:80"
+    volumes:
+    - ${PWD}/public:/usr/share/nginx/html
+
