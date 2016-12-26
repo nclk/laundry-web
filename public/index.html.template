@@ -46,7 +46,7 @@
 					-1,
 					-1
 				);
-			var baseURI = "http://54.165.186.188:8080/api/v1";
+			var baseURI = "http://$SUT_API_HOST/api/v1";
 			var resourceTypeStore = laundry.Store.create(
 					"resource-types",
 					baseURI
