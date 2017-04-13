@@ -76,10 +76,14 @@ http {
 	add_header X-Content-Type-Options nosniff;
 	ssl_dhparam /etc/ssl/certs/dhparam.pem;
 
+	location /api {
+		proxy_pass http://${SUT_API_LOCAL_HOST}:${SUT_API_LOCAL_PORT}${DOLLAR}uri;
+	}
 	location / {
 		root /usr/share/nginx/html;
 		index index.html index.htm;
 	}
+
     }
 
 }
