@@ -31,9 +31,9 @@ http {
 	# Redirects all methods, but does not
 	# handle request body in any way. POSTs, etc.
 	# should be made to https
-    	listen 8031 default_server;
+    	listen 80 default_server;
 	# ipv6
-	listen [::]:8031 default_server;
+	listen [::]:80 default_server;
 
 	# unused
 	server_name _;
