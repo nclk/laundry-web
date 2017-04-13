@@ -3,6 +3,5 @@ FROM nginx
 ADD ./public /usr/share/nginx/html
 ADD ./nginx.conf.template /etc/nginx/nginx.conf.template
 
-RUN add-apt-repository -y ppa:certbot/certbot
-RUN apt-get update
-RUN apt-get install certbot
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/sources.list && apt-get update
+RUN apt-get install certbot -t jessie-backports
