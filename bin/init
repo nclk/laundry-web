@@ -2,7 +2,7 @@ nginx
 sleep 2
 
 certbot certonly --webroot -w /usr/share/nginx/html \
-    -d qa.sut.htvtools.us --agree-tos --email tjb1982@gmail.com --non-interactive;
+    -d ${SUT_API_HOST} --agree-tos --email tjb1982@gmail.com --non-interactive;
 
 pkill -f "nginx: master"
 
