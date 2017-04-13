@@ -55,8 +55,8 @@ http {
 
 	#ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
 	#ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
-	ssl_certificate ${SSL_CERT} 
-	ssl_certificate_key ${SSL_CERT_KEY} 
+	ssl_certificate ${SSL_CERT};
+	ssl_certificate_key ${SSL_CERT_KEY};
 
 	### for more information/explanation regarding the TLS configuration below, see:
 	### https://www.digitalocean.com/community/tutorials/how-to-create-a-self-signed-ssl-certificate-for-nginx-in-ubuntu-16-04
