@@ -1,0 +1,12 @@
+envsubst < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html
+
+nginx
+sleep 4
+
+certbot certonly --webroot -w /usr/share/nginx/html \
+    -d qa.sut.htvtools.us --agree-tos --email tjb1982@gmail.com --non-interactive;
+
+pkill -f "nginx: master"
+
+envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+nginx -g "daemon off;"
