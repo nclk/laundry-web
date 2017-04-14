@@ -5,8 +5,8 @@
 		<title>SUTweb</title>
 		<!--<link rel="stylesheet" href="css/reset.css" />-->
 		<link rel="stylesheet"
-		      href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+		      href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
 
 		<!-- <link href="bower_components/jsoneditor/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
 		<script src="bower_components/jsoneditor/dist/jsoneditor.min.js"></script> -->
@@ -46,7 +46,7 @@
 					-1,
 					-1
 				);
-			var baseURI = "http://$SUT_API_HOST/api/v1";
+			var baseURI = "${SUT_API_PROTOCOL}://${SUT_API_HOST}/api/v1";
 			var resourceTypeStore = laundry.Store.create(
 					"resource-types",
 					baseURI
