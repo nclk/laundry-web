@@ -31,6 +31,10 @@ http {
 	server ${SUT_API_LOCAL_HOST}:${SUT_API_LOCAL_PORT};
     }
 
+    upstream auth {
+	server ${SUT_AUTH_LOCAL_HOST}:${SUT_AUTH_LOCAL_PORT};
+    }
+
     server {
 	# Redirects all methods, but does not
 	# handle request body in any way. POSTs, etc.
@@ -81,12 +85,24 @@ http {
 	add_header X-Content-Type-Options nosniff;
 	ssl_dhparam /etc/ssl/certs/dhparam.pem;
 
+	location = /auth {
+		proxy_pass http://auth;
+		proxy_pass_request_body off;
+		proxy_set_header Content-Length "";
+		proxy_set_header X-Original-URI $request_uri;
+	}
 	location /api {
+		auth_request /auth;
 		proxy_pass http://api;
 	}
 	location / {
+		auth_request /auth;
 		root /usr/share/nginx/html;
 		index index.html index.htm;
+	}
+	error_page 401 = @error401;
+	location @error401 {
+		return 302 http://auth;
 	}
 
     }
