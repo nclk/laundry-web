@@ -32,7 +32,7 @@ http {
     }
 
     upstream auth {
-	server ${SUT_AUTH_LOCAL_HOST}:${SUT_AUTH_LOCAL_PORT};
+	server ${SUT_AUTH_LOCAL_HOST}:${SUT_AUTH_LOCAL_PORT}/admin;
     }
 
     server {
@@ -102,7 +102,7 @@ http {
 		root /usr/share/nginx/html;
 		index index.html index.htm;
 	}
-	location /auth/ {
+	location /admin {
 		proxy_pass http://auth;
 	}
 
