@@ -67,8 +67,8 @@ http {
 	### XXX uncomment the following two lines in prod, and comment the two lines below that
 	#ssl_certificate /etc/letsencrypt/live/${SSL_CERT_DOMAIN}/fullchain.pem;
 	#ssl_certificate_key /etc/letsencrypt/live/${SSL_CERT_DOMAIN}/privkey.pem;
-	ssl_certificate ${SSL_CERT}
-	ssl_certificate_key ${SSL_CERT_KEY}
+	ssl_certificate ${SSL_CERT};
+	ssl_certificate_key ${SSL_CERT_KEY};
 
 	### for more information/explanation regarding the TLS configuration below, see:
 	### https://www.digitalocean.com/community/tutorials/how-to-create-a-self-signed-ssl-certificate-for-nginx-in-ubuntu-16-04
@@ -83,7 +83,7 @@ http {
 	ssl_stapling_verify on;
 	resolver 8.8.8.8 8.8.4.4 valid=300s;
 	resolver_timeout 5s;
-        ${STRICT_TRANSPORT_SECURITY_DIRECTIVE};
+        ${STRICT_TRANSPORT_SECURITY_DIRECTIVE}
 	#add_header Strict-Transport-Security "max-age=63072000; includeSubdomains";
 	add_header X-Frame-Options DENY;
 	add_header X-Content-Type-Options nosniff;
