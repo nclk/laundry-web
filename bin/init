@@ -1,5 +1,4 @@
-
-if [ ! -f /etc/letsencrypt/live/${SSL_CERT_DOMAIN}/fullchain.pem ]
+if [ "x$CERTBOT" == "xyes" ]
 then
 	nginx
 	sleep 2
@@ -12,4 +11,9 @@ fi
 
 envsubst < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html
 envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+
 nginx -g "daemon off;"
+
+# Use this instead to debug nginx without exiting the process:
+#nginx
+#ping -i 100 8.8.8.8 > /dev/null
