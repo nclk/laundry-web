@@ -1,11 +1,19 @@
-nginx
-sleep 2
-
-certbot certonly --webroot -w /usr/share/nginx/html \
-    -d ${SUT_API_HOST} --agree-tos --email tjb1982@gmail.com --non-interactive;
-
-pkill -f "nginx: master"
+if [ "x$CERTBOT_DOMAIN" != "x" ]
+then
+	nginx
+	sleep 2
+	
+	certbot certonly --webroot -w /usr/share/nginx/html \
+	    -d ${CERTBOT_DOMAIN} --agree-tos --email tjb1982@gmail.com --non-interactive;
+	
+	pkill -f "nginx: master"
+fi
 
 envsubst < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html
 envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+
 nginx -g "daemon off;"
+
+# Use this instead to debug nginx without exiting the process:
+#nginx
+#ping -i 100 localhost > /dev/null
