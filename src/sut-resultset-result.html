@@ -1,0 +1,40 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="sut-resultset-result">
+    <template>
+        <style>
+            :host p {
+                margin: 0;
+                padding: 0;
+            }
+        </style>
+        <p>{{result.program_name}}</p>
+    </template>
+    <script>
+        class SutResultsetResult extends Polymer.Element {
+            static get is() { return "sut-resultset-result"; }
+
+            static get properties() {
+                return {
+                    result: {
+                        type: Object,
+                        value: {},
+                        notify: true,
+                        reflectToAttribute: true,
+                        observer: "_resultChanged"
+                    }
+                };
+            }
+
+            static get observers() {
+                return [];
+            }
+
+            _resultChanged(newResult, oldResult) {
+                if (!oldResult) return;
+            }
+        } 
+
+        customElements.define(SutResultsetResult.is, SutResultsetResult);
+    </script>
+</dom-module>

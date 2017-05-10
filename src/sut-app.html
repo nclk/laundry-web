@@ -1,0 +1,311 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/nclk-tree/nclk-tree.html">
+<link rel="import" href="../bower_components/progress-bar/progress-bar.html">
+<link rel="import" href="my-icons.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="sut-app">
+    <template>
+        <style include="shared-styles"></style>
+        <style>
+            :host {
+                --app-primary-color: #4285f4;
+                --app-secondary-color: black;
+
+                display: block;
+            }
+
+            app-drawer > div.wrapper {
+                /*height: 100%;*/
+                overflow: auto;
+            }
+
+            app-drawer-layout:not([narrow]) [drawer-toggle] {
+                display: none;
+            }
+
+            app-header {
+                color: #fff;
+                background-color: var(--app-primary-color);
+            }
+
+            app-header paper-icon-button {
+                --paper-icon-button-ink-color: white;
+            }
+
+            .drawer-list {
+                margin: 0 20px;
+            }
+
+            .drawer-list a {
+                display: block;
+                /*padding: 0 16px;*/
+                text-decoration: none;
+                color: var(--app-secondary-color);
+                line-height: 40px;
+            }
+
+            .drawer-list a.iron-selected,
+            .drawer-list a.iron-selected paper-item {
+                color: black;
+                font-weight: bold;
+                background: orange;
+                color: white;
+                text-shadow: 0 0 5px #aaa;
+            }
+
+        </style>
+
+        <app-location route="{{route}}"></app-location>
+        <app-route
+                route="{{route}}"
+                pattern="/:context"
+                data="{{routeData}}"
+                tail="{{subroute}}"></app-route>
+
+        <iron-ajax
+                id="ajax"
+                auto
+                handle-as="json"
+                on-error="_ajaxError"
+                last-response="{{resourceTypes}}"
+                debounce-duration="300"></iron-ajax>
+
+        <app-drawer-layout fullbleed>
+            <!-- Drawer content -->
+            <app-drawer id="drawer" slot="drawer">
+                <div class="wrapper">
+                    <app-toolbar>Menu</app-toolbar>
+
+                    <iron-selector
+                            selected="[[relation]]"
+                            attr-for-selected="name"
+                            class="drawer-list"
+                            role="navigation">
+                        <template
+                                is="dom-repeat"
+                                items="[[_resourceTypeList(resourceTypes)]]">
+                            <a tabindex="-1" href="[[item.context]]"
+                                    name="[[item.relation]]">
+                                <paper-item>
+                                    [[item.name]]
+                                </paper-item>
+                            </a>
+                        </template>
+                    </iron-selector>
+                </div>
+            </app-drawer>
+
+            <!-- Main content -->
+            <app-header-layout has-scrolling-region>
+
+                <app-header slot="header" condenses reveals effects="waterfall">
+                    <app-toolbar>
+                        <paper-icon-button
+                                icon="my-icons:menu"
+                                drawer-toggle>
+                        </paper-icon-button>
+                        <div main-title>Sut</div>
+                    </app-toolbar>
+                </app-header>
+
+                <iron-pages
+                        id="iron-pages"
+                        selected="[[page]]"
+                        attr-for-selected="name"
+                        fallback-selection="http-404"
+                        role="main">
+
+                    <resource-list
+                            name="resource-list"
+                            route="{{subroute}}"
+                            sut-api-base="{{sutApiBase}}"
+                            selected-resource-type="[[_resourceTypeFromRelation(
+                                resourceTypes, relation)]]">
+                    </resource-list>
+
+                    <progress-bar name="progress-bar"></progress-bar>
+
+                    <http-404 name="http-404"></http-404>
+
+                    <http-500 name="http-500"></http-500>
+
+                </iron-pages>
+
+            </app-header-layout>
+        </app-drawer-layout>
+    </template>
+
+    <script>
+        class SutApp extends Polymer.Element {
+
+            static get is() { return 'sut-app'; }
+
+            static get properties() {
+                return {
+                    resourceTypes: {
+                        type: Object,
+                        value: () => { return {}; },
+                        observer: "_resourceTypesChanged"
+                    },
+                    includedTypes: {
+                        type: Array,
+                        value: () => {
+                            return [
+                                "program",
+                                "test_run"
+                            ];
+                        }
+                    },
+                    context: {
+                        type: String,
+                        observer: "_contextChanged"
+                    },
+                    relation: {
+                        type: String
+                    },
+                    page: {
+                        type: String,
+                        reflectToAttribute: true,
+                        observer: '_pageChanged',
+                    },
+                    sutApiBase: {
+                        type: String,
+                        reflectToAttribute: true,
+                        observer: "_sutApiBaseChanged"
+                    },
+                    defaultContext: {
+                        type: String,
+                        reflectToAttribute: true,
+                        value: "/"
+                    }
+                };
+            }
+
+            static get observers() {
+                return [
+                    "_routeContextChanged(routeData.context)"
+                ];
+            }
+
+            _routeContextChanged(context) {
+                this.context = context;
+            }
+
+            _sutApiBaseChanged(c) {
+                this.$.ajax.url = c;
+            }
+
+            _resourceTypeFromRelation(types, relation) {
+                return types[
+                    Object.keys(types).reduce(
+                        (p, c) => types[c].relation === relation && c || p,
+                        null
+                    )
+                ];
+            }
+
+            _resourceTypesChanged(c) {
+                return this._contextChanged(this.routeData.context);
+            }
+
+            _resourceTypeList(types) {
+                return Object.keys(types).map(
+                    x => (
+                        ~this.includedTypes.indexOf(types[x].relation)
+                    ) && (
+                        types[x].name = x,
+                        types[x]
+                    )
+                ).filter(x => !!x);
+            }
+
+            _contextChanged(context) {
+
+                let types = this.resourceTypes;
+
+                // Close a non-persistent drawer when the page & route are changed.
+                // XXX: shouldn't we just have a click event for any time a menu item
+                // has been selected (i.e., even if it's the same one we're on? Other-
+                // wise the user has to click outside the menu to dismiss it.
+                if (!this.$.drawer.persistent) {
+                    this.$.drawer.close();
+                }
+
+                // Set page and relation
+                if (typeof context === "undefined" ||
+                    types && !Object.keys(types).length) {
+                    // Initially context and/or types is undefined
+                    this._displayProgress();
+                }
+                else if (!types)
+                    // Something went wrong because types has a default value of {} so
+                    // this might occur if iron-ajax sets it to null/undefined after
+                    // an error.
+                    this.page = "http-500"
+                else if (context === "") {
+                    // Captures the situation where the route is just plain "/"
+                    this.set("route.path", this.defaultContext);
+                }
+                else {
+                    // We can assume both context and types have reasonable values, so
+                    // we go ahead and set relation and page.
+                    this.relation = Object.keys(types).reduce(
+                        (p, c) => types[c].context === "/" + context
+                            ? types[c].relation
+                            : p,
+                        null
+                    );
+
+                    this.page = !this.relation
+                        ? "http-404"
+                        : "resource-list";
+                }
+
+            }
+
+            _pageChanged(page) {
+                // Load page import on demand. Show 404 page if fails
+                var resolvedPageUrl = this.resolveUrl(page + '.html');
+
+                this._displayProgress();
+                Polymer.importHref(
+                        resolvedPageUrl,
+                        (() => this.page === page &&
+                            this.$["iron-pages"].select(page)),
+                        (() => this._showPage404(page)),
+                        true);
+            }
+
+            _displayProgress() {
+                return this.$["iron-pages"].select("progress-bar");
+            }
+
+            _showPage404(page) {
+                this.page = this.page === page
+                    ? "http-404"
+                    : this.page;
+            }
+
+            _ajaxError(a, b) {
+                console.error(b);
+                this.page = "http-500";
+            }
+        }
+
+        window.customElements.define(SutApp.is, SutApp);
+    </script>
+</dom-module>

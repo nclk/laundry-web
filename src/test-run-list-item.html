@@ -1,0 +1,126 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+
+<dom-module id="test-run-list-item">
+    <template>
+        <style>
+            /*paper-item:focus div {
+                font-weight: bold;
+            }*/
+            a {
+                text-decoration: none;
+            }
+            .status-icon {
+                margin-right: 5px;
+            }
+
+            .status-icon-pass {
+                color: green;
+            }
+            .status-icon-fail {
+                color: red;
+            }
+            .status-icon-progress {
+                color: orange;
+            }
+            .test-id {
+                color: var(--app-secondary-color)
+            }
+            a {
+                text-decoration: none;
+                color: var(--app-primary-color);
+            }
+            .checkpoints {
+                font-weight: bold;
+            }
+
+        </style>
+        <a on-click="_testRunClicked" tabindex="-1" href="/test-runs/[[testRun.id]]">
+            <paper-item>
+                <paper-item-body three-line>
+                    <div>
+                        <iron-icon
+                                class$="status-icon status-icon-[[_statusClass(testRun)]]"
+                                icon="[[_statusIcon(testRun)]]">
+                        </iron-icon>
+                        <span class="program-name">[[testRun.program_name]]</span>
+                    </div>
+                    <template is="dom-if" if="{{testRun.num_checkpoints}}">
+                        <div secondary>
+                        <template is="dom-if" if="[[testRun.num_failures]]">
+                            <span class="checkpoints">
+                                {{testRun.num_failures}}
+                            </span>
+                                failures out of
+                        </template>
+                        <span class="checkpoints">
+                            {{testRun.num_checkpoints}}
+                        </span>
+                        checkpoints
+                        </div>
+                    </template>
+                    <div secondary>
+                        [[_formatDate(testRun.created)]]
+                    </div>
+                </paper-item-body>
+            </paper-item>
+        </a>
+    </template>
+    <script>
+        class TestRunListItem extends Polymer.Element {
+            static get is() { return "test-run-list-item"; }
+            static get properties() {
+                return {
+                    testRun: {
+                        type: Object,
+                        value: () => { return {}; },
+                        observer: "_testRunChanged"
+                    }
+                };
+            }
+
+            _statusClass(testRun) {
+                return testRun.status === "complete"
+                    ? testRun.num_failures
+                        ? "fail"
+                        : "pass"
+                    : "progress";
+            }
+
+            _statusIcon(testRun) {
+                return testRun.status === "complete"
+                    //? testRun.num_failures
+                    //    ? "icons:alarm"
+                    //    : "icons:done-all"
+                    //: "icons:compare-arrows";
+                    ? testRun.num_failures
+                        ? "icons:thumb-down"
+                        : "icons:thumb-up"
+                    : "icons:alarm";
+            }
+
+            _formatDate(dt) {
+                return new Date(dt).toLocaleString();
+            }
+
+            _testRunChanged(c) {
+                //console.log(c);
+            }
+
+            _testRunClicked(e) {
+                this.dispatchEvent(new CustomEvent("resource-select", {
+                    detail: {
+                        resource: this.testRun
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
+            }
+        }
+
+        customElements.define(TestRunListItem.is, TestRunListItem);
+    </script>
+</dom-module>
