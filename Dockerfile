@@ -5,7 +5,7 @@ ADD . /web
 
 RUN echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/apt/sources.list.d/foo.list && apt-get update
 
-RUN apt-get install -y curl gnupg
+RUN apt-get install -y curl gnupg procps
 RUN curl -sL https://deb.nodesource.com/setup_7.x | bash -
 RUN apt-get install -y nodejs git
 RUN apt-get install -y -t jessie-backports certbot
