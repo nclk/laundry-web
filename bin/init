@@ -9,8 +9,6 @@ then
 	pkill -f "nginx: master"
 fi
 
-bower install --allow-root
-polymer build
 cp -R ./build/default/* /usr/share/nginx/html
 
 envsubst < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html
