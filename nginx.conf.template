@@ -101,19 +101,30 @@ http {
 	location /api {
 		auth_request /auth;
 		proxy_pass http://api;
-                proxy_set_header X-Original-Host ${DOLLAR}host;
-                proxy_set_header X-Original-Protocol https;
+        	proxy_set_header X-Original-Host ${DOLLAR}host;
+        	proxy_set_header X-Original-Protocol https;
 	}
 	location / {
 		auth_request /auth;
-		index index.html index.htm;
+		rewrite ^ /index.html break;
+	}
+        location /src/ {
+		auth_request /auth;
+	}
+	location /images/ {
+		auth_request /auth;
+	}
+	location /bower_components/ {
+		auth_request /auth;
 	}
 	location /admin {
 		proxy_pass http://auth;
+		proxy_set_header X-Original-URI ${DOLLAR}http_x_original_uri;
 	}
 
 	error_page 401 = @error401;
 	location @error401 {
+		add_header X-Original-URI ${DOLLAR}request_uri;
 		return 302 /admin/login;
 	}
 

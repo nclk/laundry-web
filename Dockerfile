@@ -14,4 +14,4 @@ ADD ./nginx.conf.template /etc/nginx/nginx.conf.template
 ADD ./bin/init /usr/bin/init-sutweb
 RUN npm i -g polymer-cli@next bower
 
-CMD [ "bash", "/usr/bin/init-sutweb" ]
+#CMD [ "bash", "/usr/bin/init-sutweb" ]
