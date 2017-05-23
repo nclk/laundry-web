@@ -109,6 +109,10 @@ http {
 	location /admin {
 		proxy_pass http://auth;
 	}
+	location = /version {
+		default_type text/plain;
+		return 200 ${SUTWEB_VERSION};
+	}
 
 	error_page 401 = @error401;
 	location @error401 {
