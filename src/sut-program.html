@@ -78,16 +78,16 @@
 
             ready() {
                 super.ready();
-                this.$.form.ajax = this.$.ajax;
+                var req = this.$.form.request = this.$.ajax;
                 this.$.form.addEventListener("iron-form-presubmit", e => {
                     const body = {
                         program_name: this.program.name,
                         harvest_keys: [ "$bot" ],
                         env: [ this.$.form.serializeForm() ]
                     };
-                    this.$.form.ajax.contentType = "application/json";
-                    this.$.form.ajax.body = JSON.stringify(body);
-
+                    req.contentType = "application/json";
+                    req.body = JSON.stringify(body);
+                    req.method = "post";
                     //e.preventDefault();
                     //console.log(body);
                 });
@@ -108,6 +108,7 @@
             }
 
             _submit(e) {
+                //this.$.form.noValidate = true;
                 this.$.form.submit();
             }
 

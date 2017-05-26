@@ -210,7 +210,7 @@
             }
 
             _resourceTypeFromRelation(types, relation) {
-                return types[
+                return types && types[
                     Object.keys(types).reduce(
                         (p, c) => types[c].relation === relation && c || p,
                         null
@@ -223,7 +223,7 @@
             }
 
             _resourceTypeList(types) {
-                return Object.keys(types).map(
+                return types && Object.keys(types).map(
                     x => (
                         ~this.includedTypes.indexOf(types[x].relation)
                     ) && (
