@@ -1,0 +1,54 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-item/paper-item-body.html">
+
+<dom-module id="program-list-item">
+    <template>
+        <style>
+            /*paper-item:focus div {
+                font-weight: bold;
+            }*/
+            a {
+                text-decoration: none;
+                color: var(--app-primary-color);
+            }
+        </style>
+        <a on-click="_programClicked" tabindex="-1" href="/programs/[[program.name]]">
+            <paper-item>
+                <paper-item-body two-line>
+                    <div>[[program.name]]</div>
+                    <div secondary>[[program.documentation.description]]</div>
+                </paper-item-body>
+            </paper-item>
+        </a>
+    </template>
+    <script>
+        class ProgramListItem extends Polymer.Element {
+            static get is() { return "program-list-item"; }
+            static get properties() {
+                return {
+                    program: {
+                        type: Object,
+                        value: () => { return {}; },
+                        observer: "_programChanged"
+                    }
+                };
+            }
+            _programChanged(c) {
+                //console.log(c);
+            }
+
+            _programClicked(e) {
+                this.dispatchEvent(new CustomEvent("resource-select", {
+                    detail: {
+                        resource: this.program
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
+            }
+        }
+
+        customElements.define(ProgramListItem.is, ProgramListItem);
+    </script>
+</dom-module>

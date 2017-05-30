@@ -1,6 +1,7 @@
 *.swp
 *.swo
 target/
+build/
 linen-logs/
 .lein-repl-history
 npm-debug.log
