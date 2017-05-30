@@ -121,6 +121,10 @@ http {
 		proxy_pass http://auth;
 		proxy_set_header X-Original-URI ${DOLLAR}http_x_original_uri;
 	}
+	location = /version {
+		default_type text/plain;
+		return 200 ${SUTWEB_VERSION};
+	}
 
 	error_page 401 = @error401;
 	location @error401 {
