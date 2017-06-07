@@ -42,7 +42,16 @@
         <!-- XXX: below `paper-material` needed for nclk-config-editor...why? -->
         <paper-material elevation="0"></paper-material>
         <iron-ajax
-                id="ajax"
+                id="harvestajax"
+                auto
+                params
+                handle-as="json"
+                on-response="_handleHarvests"
+                debounce-duration="300"></iron-ajax>
+
+        <iron-ajax
+                id="testrunajax"
+                auto
                 params
                 handle-as="json"
                 last-response="{{testRun}}"
@@ -55,6 +64,7 @@
         <span>[[_formatDate(testRun.created)]]</span>
 
         <h3>Status: <span class="status">[[testRun.status]]</span></h3>
+        <progress-bar id="progress"></progress-bar>
         <template is="dom-repeat" items="[[harvests]]">
             <h3><span class$="status status-[[_statusClass(testRun)]]">[[item.title]]</span></h3> 
             <ul style="list-style: none inside none; padding: 0px;">
@@ -94,6 +104,12 @@
                     harvests: {
                         type: Array,
                         value: () => []
+                    },
+                    testPollTimeout: {
+                        type: Number
+                    },
+                    testRunChangedListener: {
+                        type: Function
                     }
                 };
             }
@@ -122,7 +138,7 @@
 
             _handleHarvests(e) {
                 try {
-                    console.log(e.target.lastResponse.results[0].data);
+                    //console.log(e.target.lastResponse.results[0].data);
                     this.harvests = e.target.lastResponse.results[0].data;
                 }
                 catch (e) {
@@ -131,14 +147,25 @@
             }
 
             _testRunChanged(testRun) {
-                const $ajax = this.$.ajax.cloneNode(true);
-                $ajax.url = testRun["related-resources"][
+                const $harvestajax = this.$.harvestajax;
+                const $testrunajax = this.$.testrunajax;
+                const dt = (new Date()).getTime();
+                
+                this.$.progress.style.display = "none";
+
+                $harvestajax.url = testRun["related-resources"][
                     "harvests"
-                ];
-                $ajax.addEventListener(
-                    "response", this._handleHarvests.bind(this)
-                );
-                $ajax.generateRequest();
+                ] + "&_=" + dt;
+                if (testRun
+                    && testRun.status
+                    && testRun.status.toLowerCase() === "running") {
+                    this.$.progress.style.display = "block";
+                    setTimeout(() => {
+                        console.log("timeout", testRun);
+                        $testrunajax.url = testRun.href + "?_=" + dt;
+                    }, 5000);
+                }
+                //$harvestajax.generateRequest();
             }
         }
         customElements.define(SutTestRun.is, SutTestRun);

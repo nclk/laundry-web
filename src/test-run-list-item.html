@@ -38,7 +38,17 @@
             }
 
         </style>
+
+        <iron-ajax
+                id="testrunajax"
+                auto
+                params
+                handle-as="json"
+                last-response="{{testRun}}"
+                debounce-duration="300"></iron-ajax>
+
         <a on-click="_testRunClicked" tabindex="-1" href="/test-runs/[[testRun.id]]">
+            <progress-bar id="progress"></progress-bar>
             <paper-item>
                 <paper-item-body three-line>
                     <div>
@@ -106,8 +116,21 @@
                 return new Date(dt).toLocaleString();
             }
 
-            _testRunChanged(c) {
+            _testRunChanged(testRun) {
+                const $testrunajax = this.$.testrunajax;
+                const dt = (new Date()).getTime();
+
+                this.$.progress.style.display = "none";
+
                 //console.log(c);
+                if (testRun
+                    && testRun.status
+                    && testRun.status.toLowerCase() === "running") {
+                    this.$.progress.style.display = "";
+                    setTimeout(() => {
+                        $testrunajax.url = testRun.href + "?_=" + dt;
+                    }, 5000);
+                }
             }
 
             _testRunClicked(e) {
