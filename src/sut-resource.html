@@ -32,11 +32,13 @@
             <sut-program 
                     name="sut-program"
                     sut-api-base="{{sutApiBase}}"
+                    relation="[[resourceType.relation]]"
                     program="[[resource]]">
             </sut-program>
             <sut-test_run
                     name="sut-test_run"
                     sut-api-base="{{sutApiBase}}"
+                    relation="[[resourceType.relation]]"
                     test-run="[[resource]]">
             </sut-test_run>
             <div name="unknown">Unknown resource type...</div>
