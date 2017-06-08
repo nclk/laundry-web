@@ -64,9 +64,28 @@
         <span>[[_formatDate(testRun.created)]]</span>
 
         <h3>Status: <span class="status">[[testRun.status]]</span></h3>
+        <h3>Configuration:</h3>
+        <paper-material elevation="1">
+            <ul name="environment-report"
+                style="list-style: none outside none; padding: 0">
+                <template is="dom-repeat" items="[[_environmentReports(testRun)]]">
+                    <paper-material elevation="1">
+                        <li class="field">
+                            <span class="url">[[item.title]]:</span>
+                            <span>[[item.value]]</span>
+                        </li>
+                    </paper-material>
+                </template>
+            </ul>
+        </paper-material>
+        <h3>Results:</h3>
         <progress-bar id="progress"></progress-bar>
         <template is="dom-repeat" items="[[harvests]]">
-            <h3><span class$="status status-[[_statusClass(testRun)]]">[[item.title]]</span></h3> 
+            <h3>
+                <span class$="status status-[[_statusClass(testRun)]]">
+                    [[item.title]]
+                </span>
+            </h3> 
             <ul style="list-style: none inside none; padding: 0px;">
                 <template is="dom-repeat" items="[[item.fields]]">
                     <paper-material>
@@ -117,12 +136,34 @@
                 };
             }
 
+            ready() {
+                super.ready();
+            }
+
             _isTestRun(tr) {
                 return tr && this.relation === "test_run";
             }
 
-            ready() {
-                super.ready();
+            _environmentReports(testRun) {
+                if (!this._isTestRun(testRun))
+                    return;
+
+                return Object.keys(testRun.env).map((x) => {
+                    const val = testRun.env[x];
+                    return {
+                        title: x,
+                        value: Array.isArray(val) ?
+                            testRun.env[x].map((y) => {
+                                return y.name || y;
+                            }).join(", ")
+                            : typeof val === "object"
+                            ? JSON.stringify(val, false, 4)
+                            : val
+                    };
+                }).sort((a, b) => {
+                    return a.title < b.title ?
+                        -1 : 1;
+                });
             }
 
             _statusClass(tr) {
