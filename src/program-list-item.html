@@ -13,14 +13,16 @@
                 color: var(--app-primary-color);
             }
         </style>
-        <a on-click="_programClicked" tabindex="-1" href="/programs/[[program.name]]">
-            <paper-item>
-                <paper-item-body two-line>
-                    <div>[[program.name]]</div>
-                    <div secondary>[[program.documentation.description]]</div>
-                </paper-item-body>
-            </paper-item>
-        </a>
+        <template is="dom-if" if="_isProgram(program)">
+            <a on-click="_programClicked" tabindex="-1" href="/programs/[[program.name]]">
+                <paper-item>
+                    <paper-item-body two-line>
+                        <div>[[program.name]]</div>
+                        <div secondary>[[program.documentation.description]]</div>
+                    </paper-item-body>
+                </paper-item>
+            </a>
+        </template>
     </template>
     <script>
         class ProgramListItem extends Polymer.Element {
@@ -28,14 +30,16 @@
             static get properties() {
                 return {
                     program: {
-                        type: Object,
-                        value: () => { return {}; },
-                        observer: "_programChanged"
+                        type: Object
+                    },
+                    relation: {
+                        type: String
                     }
                 };
             }
-            _programChanged(c) {
-                //console.log(c);
+
+            _isProgram(p) {
+                return p && this.relation === "program";
             }
 
             _programClicked(e) {

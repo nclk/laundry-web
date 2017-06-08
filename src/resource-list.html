@@ -83,10 +83,12 @@
                                 selected="[[selectedResourceType.relation]]">
                             <program-list-item
                                     program="[[item]]"
+                                    relation="[[selectedResourceType.relation]]"
                                     name="program">
                             </program-list-item>
                             <test-run-list-item
                                     test-run="[[item]]"
+                                    relation="[[selectedResourceType.relation]]"
                                     name="test_run">
                             </test-run-list-item>
                             <div name="unknown">Unknown resource type.</div>
@@ -165,7 +167,6 @@
             }
 
             _routeChanged(route) {
-                console.log("route", route);
                 this.set(
                     "routeData.context",
                     !route.path ? "" : this.routeData.context
@@ -173,7 +174,6 @@
             }
 
             _routeContextChanged(context) {
-                console.log("routeContext", context, this.selectedResource, this.selectedResourceType, this.relation);
                 this.context = context;
             }
 

@@ -86,10 +86,16 @@
                 return {
                     testRun: {
                         type: Object,
-                        value: () => { return {}; },
                         observer: "_testRunChanged"
+                    },
+                    relation: {
+                        type: String
                     }
                 };
+            }
+
+            _isTestRun(tr) {
+                return tr && this.relation === "test_run";
             }
 
             _statusClass(testRun) {
@@ -117,19 +123,18 @@
             }
 
             _testRunChanged(testRun) {
-                const $testrunajax = this.$.testrunajax;
-                const dt = (new Date()).getTime();
-
                 this.$.progress.style.display = "none";
 
-                //console.log(c);
-                if (testRun
-                    && testRun.status
-                    && testRun.status.toLowerCase() === "running") {
-                    this.$.progress.style.display = "";
-                    setTimeout(() => {
-                        $testrunajax.url = testRun.href + "?_=" + dt;
-                    }, 5000);
+                if (this._isTestRun(testRun)) {
+                    const $testrunajax = this.$.testrunajax;
+                    const dt = (new Date()).getTime();
+
+                    if (testRun.status.toLowerCase() === "running") {
+                        this.$.progress.style.display = "";
+                        setTimeout(() => {
+                            $testrunajax.url = testRun.href + "?_=" + dt;
+                        }, 5000);
+                    }
                 }
             }
 

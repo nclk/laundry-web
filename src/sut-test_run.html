@@ -110,8 +110,16 @@
                     },
                     testRunChangedListener: {
                         type: Function
+                    },
+                    relation: {
+                        type: String
                     }
                 };
+            }
+
+            _isTestRun(tr) {
+                console.log(tr, this.relation);
+                return tr && this.relation === "test_run";
             }
 
             ready() {
@@ -147,25 +155,28 @@
             }
 
             _testRunChanged(testRun) {
-                const $harvestajax = this.$.harvestajax;
-                const $testrunajax = this.$.testrunajax;
-                const dt = (new Date()).getTime();
-                
+                this.harvests = [];
                 this.$.progress.style.display = "none";
 
-                $harvestajax.url = testRun["related-resources"][
-                    "harvests"
-                ] + "&_=" + dt;
-                if (testRun
-                    && testRun.status
-                    && testRun.status.toLowerCase() === "running") {
-                    this.$.progress.style.display = "block";
-                    setTimeout(() => {
-                        console.log("timeout", testRun);
-                        $testrunajax.url = testRun.href + "?_=" + dt;
-                    }, 5000);
+                if (this._isTestRun(testRun)) {
+                    const $harvestajax = this.$.harvestajax;
+                    const $testrunajax = this.$.testrunajax;
+                    const dt = (new Date()).getTime();
+                
+                    if (testRun.status === "complete") {
+                        $harvestajax.url = testRun["related-resources"][
+                            "harvests"
+                        ] + "&_=" + dt;
+                    }
+                    else this.harvests = [];
+
+                    if (testRun.status.toLowerCase() === "running") {
+                        this.$.progress.style.display = "";
+                        setTimeout(() => {
+                            $testrunajax.url = testRun.href + "?_=" + dt;
+                        }, 5000);
+                    }
                 }
-                //$harvestajax.generateRequest();
             }
         }
         customElements.define(SutTestRun.is, SutTestRun);
