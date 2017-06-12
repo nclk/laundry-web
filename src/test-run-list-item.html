@@ -56,20 +56,20 @@
                                 class$="status-icon status-icon-[[_statusClass(testRun)]]"
                                 icon="[[_statusIcon(testRun)]]">
                         </iron-icon>
-                        <span class="program-name">[[testRun.program_name]]</span>
+                        <span class="program-name">[[testRun.program_name]] ([[_environmentList(testRun)]])</span>
                     </div>
                     <template is="dom-if" if="{{testRun.num_checkpoints}}">
                         <div secondary>
-                        <template is="dom-if" if="[[testRun.num_failures]]">
+                            <template is="dom-if" if="[[testRun.num_failures]]">
+                                <span class="checkpoints">
+                                    {{testRun.num_failures}}
+                                </span>
+                                    failures out of
+                            </template>
                             <span class="checkpoints">
-                                {{testRun.num_failures}}
+                                {{testRun.num_checkpoints}}
                             </span>
-                                failures out of
-                        </template>
-                        <span class="checkpoints">
-                            {{testRun.num_checkpoints}}
-                        </span>
-                        checkpoints
+                            checkpoints
                         </div>
                     </template>
                     <div secondary>
@@ -122,10 +122,19 @@
                 return new Date(dt).toLocaleString();
             }
 
+            _environmentList(testRun) {
+                if (!this._isTestRun(testRun))
+                    return;
+
+                const envs = testRun.env.ENVIRONMENTS;
+                return envs.map((x) => x.name).join(", ");
+            }
+
             _testRunChanged(testRun) {
                 this.$.progress.style.display = "none";
 
                 if (this._isTestRun(testRun)) {
+                    console.log(testRun);
                     const $testrunajax = this.$.testrunajax;
                     const dt = (new Date()).getTime();
 
