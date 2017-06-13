@@ -98,10 +98,11 @@
                     on-mouseleave="_drop"
                     on-mouseenter="_pop">
                 <paper-input
-                    label="[[configProfile.name]]"
-                    disabled="[[configProfile.meta.read-only]]"
-                    name="other"
-                    value="[[_data(configProfile)]]">
+                        on-change="_otherChanged"
+                        label="[[configProfile.name]]"
+                        disabled="[[configProfile.meta.read-only]]"
+                        name="[[configProfile.name]]"
+                        value="[[_data(configProfile)]]">
                 </paper-input>
             </paper-material>
         </iron-pages>
@@ -149,6 +150,11 @@
 
             _bundle(cp, item) {
                 return [cp,item];
+            }
+
+            _otherChanged(e) {
+                const val = e.target.value;
+                this.value = val;
             }
 
             _arrayChanged(e) {
