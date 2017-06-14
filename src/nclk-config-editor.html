@@ -154,7 +154,10 @@
 
             _otherChanged(e) {
                 const val = e.target.value;
-                this.value = val;
+                const parsed = parseInt(val);
+                if (parsed)
+                    this.value = parsed;
+                else this.value = val;
             }
 
             _arrayChanged(e) {
