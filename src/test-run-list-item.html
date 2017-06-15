@@ -36,6 +36,10 @@
             .checkpoints {
                 font-weight: bold;
             }
+            .duration {
+                font-style: italic;
+                color: #aaa;
+            }
 
         </style>
 
@@ -70,10 +74,13 @@
                                 {{testRun.num_checkpoints}}
                             </span>
                             checkpoints
+                            <template is="dom-if" if="[[testRun.num_checkpoints]]">
+                                <span class="duration"> ([[_testDuration(testRun)]])</span>
+                            </template>
                         </div>
                     </template>
                     <div secondary>
-                        [[_formatDate(testRun.created)]]
+                        [[_formatDate(testRun.created)]] 
                     </div>
                 </paper-item-body>
             </paper-item>
@@ -96,6 +103,11 @@
 
             _isTestRun(tr) {
                 return tr && this.relation === "test_run";
+            }
+
+            _testDuration(tr) {
+                let seconds = (new Date(tr.modified) - new Date(tr.created))/1000;
+                return `${seconds} second${seconds>1?"s":""}`;
             }
 
             _statusClass(testRun) {
