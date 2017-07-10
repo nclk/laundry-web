@@ -1,0 +1,25 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<script>
+    class Format extends Polymer.Element {
+        static get is() { return "format"; }
+
+        static localeDate(dt) {
+            return new Date(dt).toLocaleString();
+        }
+
+        static duration(milliseconds) {
+            const seconds = (milliseconds/1000) % 60;
+            const minutes = Math.floor(milliseconds/1000/60);
+            return [
+                minutes && minutes,
+                minutes && " minutes",
+                seconds && minutes && ", ",
+                seconds && seconds,
+                seconds && " seconds"
+            ].filter(x => x).join("");
+        }
+    }
+
+    //Not needed because this is just a class full of static functions.
+    //customElements.define(Format.is, Format);
+</script>

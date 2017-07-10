@@ -79,6 +79,7 @@
         <iron-ajax
                 id="ajax"
                 auto
+                url="{{sutApiBase}}"
                 handle-as="json"
                 on-error="_ajaxError"
                 last-response="{{resourceTypes}}"
@@ -133,8 +134,7 @@
                             name="resource-list"
                             route="{{subroute}}"
                             sut-api-base="{{sutApiBase}}"
-                            selected-resource-type="[[_resourceTypeFromRelation(
-                                resourceTypes, relation)]]">
+                            selected-resource-type="[[selectedResourceType]]">
                     </resource-list>
 
                     <progress-bar name="progress-bar"></progress-bar>
@@ -170,12 +170,9 @@
                             ];
                         }
                     },
-                    context: {
-                        type: String,
-                        observer: "_contextChanged"
-                    },
                     relation: {
-                        type: String
+                        type: String,
+                        observer: "_relationChanged"
                     },
                     page: {
                         type: String,
@@ -184,13 +181,15 @@
                     },
                     sutApiBase: {
                         type: String,
-                        reflectToAttribute: true,
-                        observer: "_sutApiBaseChanged"
+                        reflectToAttribute: true
                     },
                     defaultContext: {
                         type: String,
                         reflectToAttribute: true,
                         value: "/"
+                    },
+                    selectedResourceType: {
+                        type: Object
                     }
                 };
             }
@@ -201,12 +200,10 @@
                 ];
             }
 
-            _routeContextChanged(context) {
-                this.context = context;
-            }
-
-            _sutApiBaseChanged(c) {
-                this.$.ajax.url = c;
+            _relationChanged(rel) {
+                this.selectedResourceType = this._resourceTypeFromRelation(
+                    this.resourceTypes, rel
+                );
             }
 
             _resourceTypeFromRelation(types, relation) {
@@ -219,7 +216,7 @@
             }
 
             _resourceTypesChanged(c) {
-                return this._contextChanged(this.routeData.context);
+                return this._routeContextChanged(this.routeData.context);
             }
 
             _resourceTypeList(types) {
@@ -233,7 +230,7 @@
                 ).filter(x => !!x);
             }
 
-            _contextChanged(context) {
+            _routeContextChanged(context) {
 
                 let types = this.resourceTypes;
 

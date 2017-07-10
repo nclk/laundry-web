@@ -33,6 +33,7 @@
                     name="sut-program"
                     sut-api-base="{{sutApiBase}}"
                     relation="[[resourceType.relation]]"
+                    env="[[detail]]"
                     program="[[resource]]">
             </sut-program>
             <sut-test_run
@@ -70,7 +71,7 @@
             };
 
             _resourceChanged(resource) {
-                if (!Object.keys(resource).length) {
+                if (resource && !Object.keys(resource).length) {
                     this.page = "progress-bar";
 
                     //setTimeout(() => {
@@ -116,6 +117,10 @@
 
             _handleAjaxRequest(e, req) {
                 //
+            }
+
+            _retest(e) {
+                console.log("doesn't make sense");
             }
 
         }

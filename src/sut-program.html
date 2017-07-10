@@ -49,6 +49,7 @@
                     <nclk-config-editor
                             id="[[_envName(item)]]"
                             name="[[_envName(item)]]"
+                            default="[[_default(item, env)]]"
                             config-profile="{{item}}">
                     </nclk-config-editor>
                 </template>
@@ -66,7 +67,12 @@
                         observer: "_programChanged"
                     },
                     configProfiles: {
-                        type: Array
+                        type: Array,
+                        observer: "_configProfilesChanged"
+                    },
+                    env: {
+                        type: Object,
+                        value: null
                     },
                     testRun: {
                         type: Object,
@@ -93,9 +99,17 @@
                 });
             }
 
+            _default(item, env) {
+                let data = env && env[Object.keys(item.data)[0]];
+                return data;
+            }
+
+            _configProfilesChanged(cps) {
+                console.log(cps);
+            }
+
             _testRunChanged(tr) {
-                //window.history.pushState({}, null, "/test-runs/" + tr.test_run_id);
-                window.history.pushState({}, null, "/test-runs/");
+                window.history.pushState({}, null, "/test-runs/" + tr.test_run_id);
                 window.dispatchEvent(new CustomEvent('location-changed'));
                 // XXX: in order for the above to work, we need selectedResource and 
                 // selectedResourceType to change in resource-list.html, which will
@@ -140,15 +154,26 @@
             }
 
             _programChanged(program) {
-                const $ajax = this.$.ajax.cloneNode(true);
-                $ajax.url = program["related-resources"][
-                    "config-profile-program-maps"
-                ];
-                $ajax.addEventListener(
-                    "response",
-                    this._handleConfigProfileProgramMaps.bind(this)
-                );
-                $ajax.generateRequest();
+                if (program) {
+                    //if (this.env) {
+                    //    return this.configProfiles = Object.keys(this.env).map(
+                    //        (key) => {
+                    //            let entry = {};
+                    //            entry[key] = this.env[key];
+                    //            return { data: entry };
+                    //        }
+                    //    );
+                    //}
+                    const $ajax = this.$.ajax.cloneNode(true);
+                    $ajax.url = program["related-resources"][
+                        "config-profile-program-maps"
+                    ];
+                    $ajax.addEventListener(
+                        "response",
+                        this._handleConfigProfileProgramMaps.bind(this)
+                    );
+                    $ajax.generateRequest();
+                }
             }
         }
         customElements.define(SutProgram.is, SutProgram);

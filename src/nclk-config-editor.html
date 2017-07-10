@@ -7,6 +7,8 @@
 <link rel="import" href="../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../bower_components/paper-tooltip/paper-tooltip.html">
 
+<link rel="import" href="type.html">
+
 <dom-module id="nclk-config-editor">
     <template>
         <style>
@@ -50,7 +52,7 @@
             [[configProfile.documentation.description]]
         </paper-tooltip>
         <iron-pages
-                selected="[[type]]"
+                selected="[[dataType]]"
                 attr-for-selected="name"
                 role="XXX"
                 fallback-selection="other"
@@ -59,7 +61,7 @@
             <paper-input
                     name="object"
                     disabled
-                    value="[[_str(value)]]"
+                    value="[[_str()]]"
                     label="[[configProfile.name]]">
             </paper-input>
 
@@ -78,12 +80,12 @@
                     <paper-button on-tap="_clearAll" class="all-none">none</paper-button>
                     </span>
                 </div>
-                <template is="dom-if" if="[[_isList(type)]]">
-                    <template is="dom-repeat" items="[[value]]">
+                <template is="dom-if" if="[[checkboxList]]">
+                    <template is="dom-repeat" items="[[checkboxList]]">
                         <paper-checkbox
-                                on-change="_arrayChanged"
+                                on-change="_checkboxChanged"
                                 value="[[item]]"
-                                checked="[[!item.$meta.optional]]"
+                                checked="checked"
                                 name="[[configProfile.name]]">
                             [[_named(item)]]
                         </paper-checkbox>
@@ -102,7 +104,7 @@
                         label="[[configProfile.name]]"
                         disabled="[[configProfile.meta.read-only]]"
                         name="[[configProfile.name]]"
-                        value="[[_data(configProfile)]]">
+                        value="[[value]]">
                 </paper-input>
             </paper-material>
         </iron-pages>
@@ -116,110 +118,177 @@
 
             static get properties() {
                 return {
+                    checkboxList: {
+                        type: Array
+                    },
+                    dataType: {
+                        type: String
+                    },
                     configProfile: {
                         type: Object,
                         observer: "_configProfileChanged",
                         notify: true
+                    },
+                    default: {
+                        type: Object
                     }
                 };
             }
 
-            _str(val) {
-                return JSON.stringify(val, false, 2);
+            _str() {
+                return JSON.stringify(this._data(), false, 2);
+            }
+
+            _arrayItemChecked(item, meta) {
+                const it = item && item.name || item;
+                const checked = !meta
+                    ? true
+                    : meta.filter
+                    ? ~meta.filter.indexOf(it)
+                    : meta.remove
+                    ? !~meta.remove.indexOf(it)
+                    : true;
+                return checked;
+            }
+
+            _defaultChanged(d) {
+                if (d) {
+                    //if (Type.isArray(d)) {
+                    if (this.dataType === "array") {
+                        this._clearAll();
+                        this._checkboxes().forEach((c) => {
+                            d.forEach((d) => {
+                                if (this._named(c.value) === this._named(d)) {
+                                    c.checked = true;
+                                    c.dispatchEvent(new Event("change"));
+                                }
+                            });
+                        });
+                    }
+                    else {
+                        //console.log("dc", d, this._data());
+                        this._data(d);
+                    }
+                }
             }
 
             _checkboxes() {
-                return this.checkboxes = this.checkboxes
+                return this.checkboxes = this.checkboxes && this.checkboxes.length
                     ? this.checkboxes
                     : this.shadowRoot.querySelectorAll("paper-checkbox");
             }
 
             _clearAll(e) {
-                Array.prototype.forEach.call(this._checkboxes(), x =>
-                    x.checked = false
-                );
-                this.value.splice(0, this.value.length);
+                Array.prototype.forEach.call(this._checkboxes(), x => {
+                    x.checked = false;
+                    x.dispatchEvent(new Event("change"));
+                });
+                //this._data().splice(0, this._data().length);
             }
 
             _selectAll(e) {
                 this._clearAll();
                 Array.prototype.map.call(this._checkboxes(), x =>
-                    (x.checked = true) && this.value.push(x.value)
+                    (x.checked = true) && this._data().push(x.value)
                 );
-            }
-
-            _bundle(cp, item) {
-                return [cp,item];
             }
 
             _otherChanged(e) {
                 const val = e.target.value;
                 const parsed = parseInt(val);
                 if (parsed)
-                    this.value = parsed;
-                else this.value = val;
+                    this._data(parsed);
+                else this._data(val);
             }
 
-            _arrayChanged(e) {
+            _checkboxChanged(e) {
                 const val = e.target.value;
                 const on = e.target.checked;
-                if (on) this.value.push(val);
-                else this.value.splice(this.value.indexOf(val), 1);
+                const data = this._data();
+                const idx = data.indexOf(val);
+                if (on) 
+                    !~idx && data.push(val);
+                else
+                    ~idx && data.splice(data.indexOf(val), 1);
             }
 
             _pop(e) {
                 e.target.elevation = 3;
+                console.log(this._data(), this.checkboxList, this._checkboxes());
             }
 
             _drop(e) {
                 e.target.elevation = 1;
             }
 
-            _isList(type) {
-                return type === "array";
+            _isList() {
+                return Type.isArray(this._data());
             }
 
             _named(item) {
                 return item && item.name || item;
             }
 
-            _data(cp) {
-                return cp.data[Object.keys(cp.data)[0]];
+            _data(x) {
+                return this.value = x
+                    ? x
+                    : this.value
+                        ? this.value
+                        : this.configProfile.data[
+                            Object.keys(this.configProfile.data)[0]
+                        ];
             }
 
-            _toType(obj) {
-                return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
+            _sortArrayValue(value) {
+                return value.sort((a, b) =>
+                    Type.isString(a.name)
+                        ? a.name.localeCompare(b.name)
+                        : Type.isString(a.id)
+                        ? a.id.localeCompare(b.id)
+                        : Type.isString(a)
+                        ? a.localeCompare(b)
+                        : Type.isNumber(a)
+                        ? a - b
+                        : 0
+                );
             }
 
-            _type() {
-                return ({})
-                    .toString
-                    .call(this.value)
-                    .match(/\s([a-zA-Z]+)/)[1]
-                    .toLowerCase()
-            }
-
-            _filterOptional() {
-                if (this.type === "array") {
-                    var copy = this.value.slice();
-                    copy.forEach(
-                        x => x.$meta && x.$meta.optional &&
-                            this.value.splice(this.value.indexOf(x), 1)
-                    );
+            _filterArrayValue(value) {
+                if (this.default) {
+                    return;
                 }
+
+                const meta = this.configProfile.meta;
+                Array.prototype.forEach.call(this._checkboxes(), x => {
+                    x.checked = !meta
+                        ? true
+                        : meta.filter
+                            ? ~meta.filter.indexOf(this._named(x.value))
+                            : meta.remove
+                                ? !~meta.remove.indexOf(this._named(x.value))
+                                : true
+                    x.dispatchEvent(new Event("change"));
+                });
             }
 
             _configProfileChanged(cp) {
-                this.value = this._data(cp);
-                this.type = this._type();
-                if (this.type === "array") {
-                    this.value.sort((a, b) =>
-                        typeof a.name === "string"
-                            ? a.name.localeCompare(b.name)
-                            : a.localeCompare(b)
-                    );
+                const data = this._data(cp.data[Object.keys(cp.data)[0]]);
+                this.dataType = Type.type(data);
+                if (this.dataType === "array") {
+                    console.log(this.configProfile.name + "1", this.checkboxList);
+                    this.set("checkboxList", this._sortArrayValue(data.slice()));
+                    console.log(this.configProfile.name, this.checkboxList);
+                    //this._sortArrayValue(data);
+                    setTimeout(() => {
+                        this._filterArrayValue(data);
+                        console.log(this.configProfile.name + "2", this.checkboxList);
+                        setTimeout(() => {
+                            this._defaultChanged(this.default);
+                        }, 0);
+                    }, 0);
+                } else {
+                    this._defaultChanged(this.default);
                 }
-                setTimeout(this._filterOptional.bind(this), 0);
             }
 
         }

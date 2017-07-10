@@ -31,7 +31,7 @@
 
         <app-route
                 route="{{route}}"
-                pattern="/:context"
+                pattern="/:resourceId"
                 data="{{routeData}}"
                 tail="{{subroute}}"></app-route>
 
@@ -62,6 +62,8 @@
                     sut-api-base="{{sutApiBase}}"
                     identifier="[[context]]"
                     resource-type="[[selectedResourceType]]"
+                    on-retest="_retest"
+                    detail="{{detail}}"
                     resource="{{selectedResource}}">
             </sut-resource>
 
@@ -79,16 +81,18 @@
                                 attr-for-selected="name"
                                 fallback-selection="unknown"
                                 role="XXX"
-                                on-resource-select="_resourceSelected"
                                 selected="[[selectedResourceType.relation]]">
                             <program-list-item
                                     program="[[item]]"
                                     relation="[[selectedResourceType.relation]]"
+                                    on-resource-select="_resourceSelected"
+                                    on-click="_dropDetail"
                                     name="program">
                             </program-list-item>
                             <test-run-list-item
                                     test-run="[[item]]"
                                     relation="[[selectedResourceType.relation]]"
+                                    on-resource-select="_resourceSelected"
                                     name="test_run">
                             </test-run-list-item>
                             <div name="unknown">Unknown resource type.</div>
@@ -110,6 +114,9 @@
             static get properties() {
                 return {
                     sutApiBase: String,
+                    route: {
+                        type: Object
+                    },
                     page: {
                         type: String,
                         observer: "_pageChanged"
@@ -124,16 +131,24 @@
                         value: () => { return {}; },
                         observer: "_selectedResourceTypeChanged"
                     },
-                    resultSet: {
-                        type: Array,
-                        value: () => [],
+                    selectedResource: {
+                        type: Object,
                         notify: true
+                    },
+                    resultSet: {
+                        type: Object,
+                        value: () => {},
+                        notify: true
+                    },
+                    detail: {
+                        type: Object,
+                        value: null
                     }
                 };
             }
 
             static get observers() {
-                return [ "_routeContextChanged(routeData.context)"
+                return [ "_resourceIdChanged(routeData.resourceId)"
                        , "_routeChanged(route)"
                        ];
             }
@@ -167,14 +182,15 @@
             }
 
             _routeChanged(route) {
+                //console.log(route, this.routeData, this.resultSet);
                 this.set(
-                    "routeData.context",
-                    !route.path ? "" : this.routeData.context
+                    "routeData.resourceId",
+                    !route.path ? "" : this.routeData.resourceId
                 );
             }
 
-            _routeContextChanged(context) {
-                this.context = context;
+            _resourceIdChanged(resourceId) {
+                this.context = resourceId;
             }
 
             _updatePage(context) {
@@ -199,19 +215,24 @@
             }
 
             _resourceSelected(e) {
-                //console.log(e.detail);
+                this.selectedResource = null;
                 this.selectedResource = e.detail.resource;
+            }
+
+            _dropDetail(e) {
+                this.detail = null;
             }
     
             _handleAjaxResponse(e, req) {
-                //this.resultSet.results.sort((a, b) =>
-                //    !!a.name
-                //        ? a.name.localeCompare(b.name)
-                //        : typeof a === "string"
-                //            ? a.localeCompare(b)
-                //            : -1
-                //);
                 this._updatePage(this.context);
+                this.selectedResource = req.response.results.reduce(
+                    (p, c) => c.name === this.context
+                        ? c
+                        : c.id === this.context
+                        ? c
+                        : p,
+                    null
+                );
             }
     
             _handleAjaxError(e, req) {
@@ -223,8 +244,12 @@
             }
     
             _selectedResourceTypeChanged(c) {
-                //console.log(c);
                 this.page = "progress-bar";
+            }
+
+            _retest(e) {
+                let testRun = e.detail.testRun;
+                this.detail = testRun.env;
             }
     
             _tmpDisplayName(item) {

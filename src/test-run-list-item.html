@@ -4,6 +4,8 @@
 <link rel="import" href="../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
 
+<link rel="import" href="format.html">
+
 <dom-module id="test-run-list-item">
     <template>
         <style>
@@ -106,8 +108,9 @@
             }
 
             _testDuration(tr) {
-                let seconds = (new Date(tr.modified) - new Date(tr.created))/1000;
-                return `${seconds} second${seconds>1?"s":""}`;
+                return Format.duration(
+                    new Date(tr.modified) - new Date(tr.created)
+                );
             }
 
             _statusClass(testRun) {
@@ -146,7 +149,7 @@
                 this.$.progress.style.display = "none";
 
                 if (this._isTestRun(testRun)) {
-                    console.log(testRun);
+                    //console.log(testRun);
                     const $testrunajax = this.$.testrunajax;
                     const dt = (new Date()).getTime();
 
@@ -154,7 +157,7 @@
                         this.$.progress.style.display = "";
                         setTimeout(() => {
                             $testrunajax.url = testRun.href + "?_=" + dt;
-                        }, 5000);
+                        }, 2000);
                     }
                 }
             }
