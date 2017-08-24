@@ -28,6 +28,9 @@
             .status-icon-progress {
                 color: orange;
             }
+            .status-icon-interrupted {
+                color: darkgrey;
+            }
             .test-id {
                 color: var(--app-secondary-color)
             }
@@ -118,6 +121,10 @@
                     ? testRun.num_failures
                         ? "fail"
                         : "pass"
+                    : testRun.status === "interrupted"
+                    ? "interrupted"
+                    : testRun.status === "error"
+                    ? "fail"
                     : "progress";
             }
 
@@ -130,6 +137,10 @@
                     ? testRun.num_failures
                         ? "icons:thumb-down"
                         : "icons:thumb-up"
+                    : testRun.status === "interrupted"
+                    ? "icons:alarm-off"
+                    : testRun.status === "error"
+                    ? "icons:error"
                     : "icons:alarm";
             }
 

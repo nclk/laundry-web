@@ -14,7 +14,7 @@
                 background-color: var(--app-primary-color);
                 text-align: center;
                 color: #fff;
-                margin: 0;
+                margin: 0 0 10px 0;
             }
             #title {
                 padding: 5px;
@@ -68,6 +68,9 @@
                 handle-as="json"
                 last-response="{{testRun}}"
                 debounce-duration="300"></iron-ajax>
+        <iron-ajax
+                id="stopajax"
+                debounce-duration="300"></iron-ajax>
 
         <paper-material class="right-title" elevation="3">
             <div>
@@ -110,6 +113,9 @@
             </div>
             <paper-button raised style="display: block" on-click="_rerunTest">
                 Rerun
+            </paper-button>
+            <paper-button raised style="display: block" on-click="_stopTest">
+                Stop
             </paper-button>
         </paper-material>
         
@@ -167,6 +173,9 @@
                         type: Function
                     },
                     relation: {
+                        type: String
+                    },
+                    sutApiBase: {
                         type: String
                     }
                 };
@@ -248,6 +257,25 @@
                 }));
             }
 
+            _stopTest(e) {
+                //console.log(this.testRun.program_name);
+                const req = this.$.stopajax;
+                req.url = [
+                    this.sutApiBase,
+                    "/actions/signal"
+                ].join("");
+
+                req.contentType = "application/json";
+                req.body = JSON.stringify({
+                    "message": "interrupt",
+                    "testrun-id": this.testRun.id
+                });
+                req.method = "post";
+
+                req.generateRequest();
+
+            }
+
             _testRunChanged(testRun) {
                 this.harvests = [];
                 this.$.progress.style.display = "none";
@@ -257,7 +285,7 @@
                     const $testrunajax = this.$.testrunajax;
                     const dt = (new Date()).getTime();
                 
-                    if (testRun.status === "complete") {
+                    if (~["complete", "interrupted", "error"].indexOf(testRun.status)) {
                         $harvestajax.url = testRun["related-resources"][
                             "harvests"
                         ] + "&_=" + dt;
