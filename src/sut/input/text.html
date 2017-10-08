@@ -1,0 +1,100 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/input/input.html">
+
+<link rel="import" href="/bower_components/paper-input/paper-input.html">
+
+
+<template class="TextInput NumberInput">
+
+    <style></style>
+
+    <sut-input id="sut-input">
+        <span slot="buttons">
+            <paper-button id="reset">Reset</paper-button>
+        </span>
+        <paper-input id="input" label="Enter value here" slot="input"
+            no-label-float></paper-input>
+    </sut-input>
+</template>
+
+<script>
+(() => {
+    
+    const _import = window.Sut._resolveImport("src/sut/input/text.html");
+
+    class TextInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
+
+        static get import() {
+            return _import;
+        }
+
+        constructor(configProfile) {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $sutInput: {
+                    value: this.shadowRoot.getElementById("sut-input")
+                },
+                $input: {
+                    value: this.shadowRoot.getElementById("input")
+                },
+                $reset: {
+                    value: this.shadowRoot.getElementById("reset")
+                }
+            });
+            this.$sutInput.configProfile = configProfile;
+            if (this.$sutInput.widget["read-only"]) {
+                this.$input.readonly = true;
+                this.$input.label = "read only";
+                this.$input.noLabelFloat = false;
+                this.$input.disabled = true;
+                this.$reset.disabled = true;
+            }
+            this.$reset.addEventListener(
+                "click", e => this.init()
+            );
+            this.init();
+        }
+
+        init() {
+            this.$input.value = this.$sutInput.configProfile.data;
+        }
+
+        get value() {
+            return {
+                [this.$sutInput.configProfile.name]: this.$input.value
+            };
+        }
+
+    }
+
+    window.Sut.Input = window.Sut.Input || Object.create(null);
+    window.Sut.Input.TextInput = TextInput;
+    window.customElements.define("sut-input-text", TextInput);
+
+    class NumberInput extends TextInput {
+        constructor(cp) {
+            super(cp);
+            this.$input.autoValidate = true;
+            this.$input.pattern = "0x[0-9a-fA-F]+|[0-9]+|[0-9]+.[0-9]+";
+            this.$input.errorMessage = `
+                Only numbers allowed: decimal integers and floats; and hexadecimal
+                integers (e.g., 0xff)
+            `;
+        }
+
+        get value() {
+            return {
+                [this.$sutInput.configProfile.name]: String(
+                    this.$input.value
+                ).indexOf("0") === 0
+                    ? parseInt(this.$input.value)
+                    : parseFloat(this.$input.value)
+            };
+        }
+    }
+    window.Sut.Input.NumberInput = NumberInput;
+    window.customElements.define("sut-input-number", NumberInput);
+
+})();
+</script>

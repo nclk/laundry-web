@@ -1,0 +1,184 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/bower_components/app-route/app-route.html">
+<link rel="import" href="/src/sut/program.html">
+<link rel="import" href="/src/sut/program-list-item.html">
+
+<template class="Programs">
+    <style>
+        ol {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        sut-program-list-item {
+            float: left;
+            width: 200px;
+        }
+        sut-program-list-item:hover {
+            background: #fff;
+            transition: all 0.5s ease-out;
+        }
+    </style>
+    <app-route id="route" pattern="/:name"></app-route>
+    <iron-pages id="pages" attr-for-selected="name" fallback-selection="list"
+        role="XXX">
+        <ol id="list" name="list"></ol>
+        <div id="detail" name="detail"></div>
+    </iron-pages>
+</template>
+
+<script>
+(() => {
+
+    const _import = window.Sut._resolveImport("src/sut/programs.html");
+
+    class Programs extends Nclk.Hoquet(HTMLElement) {
+
+        constructor() {
+            super();
+
+            this.render();
+
+            Object.defineProperties(this, {
+                $pages: {
+                    value: this.shadowRoot.getElementById("pages")
+                },
+                $list: {
+                    value: this.shadowRoot.getElementById("list")
+                },
+                $detail: {
+                    value: this.shadowRoot.getElementById("detail")
+                },
+                $route: {
+                    value: this.shadowRoot.getElementById("route")
+                }
+            });
+        }
+
+        static get import() {
+            return _import;
+        }
+
+        set route(route) {
+            this.$route.route = route;
+            this.init();
+        }
+
+        get model() { return this._model; }
+        set model(model) {
+            Object.defineProperty(this, "_model", {
+                value: model
+            });
+        }
+
+        get programs() {
+            return new Promise((resolve, reject) => {
+                if (this.model.Programs.resultSet) {
+                    resolve(this.model.Programs.resultSet);
+                } else {
+                    const req = new Request(`${this.model.Programs.href}?order=name`);
+                    fetch(req, {
+                        method: "GET"
+                    }).then((resp) => {
+                        if (!resp.ok) {
+                            reject(resp);
+                        } else {
+                            resp.json().then(data => {
+                                this.model.Programs.resultSet = data;
+                                this.model.Programs.resultSet.results.map(p => {
+                                    // XXX: doesn't it seem like this would be expensive?
+                                    p.resolutions = this.harvest(p.data, "resolve");
+                                    p.modules = this.harvest(p.data, "module");
+                                });
+                                resolve(data);
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        async _getProgram() {
+            const programs = await this.programs;
+            const candidates =
+                programs.results.filter(
+                    x => x.name === this.$route.data.name
+                );
+            return candidates.length && candidates[0];
+        }
+
+        get program() {
+            const program = this._getProgram();
+            return program;
+        }
+
+        get apiBase() { return this._apiBase }
+        set apiBase(base) {
+            Object.defineProperty(this, "_apiBase", {
+                value: base
+            });
+        }
+
+        harvest(data, key) {
+            return (
+                [data].reduce(function go(p,c) {
+                    if (c && typeof c === "object") {
+                        return Object.keys(c).map(k => c[k]).reduce(
+                            go, p.concat(
+                                Object.keys(c).filter(k => k === key).map(
+                                    k => c[k]
+                                )
+                            )
+                        );
+                    } else if (Array.isArray(c)) {
+                        return c.reduce(go, p);
+                    }
+                    return p;
+                }, [])
+            );
+        }
+
+        async init() {
+
+            let subtitle = "programs";
+            if (this.$route.active) {
+                const $program = new Sut.Program(
+                    await this.program, this.model, this.apiBase);
+                this.$detail.firstChild && this.$detail.removeChild(
+                    this.$detail.firstChild);
+                this.$detail.appendChild($program);
+                this.$pages.select("detail");
+                subtitle += `&nbsp;&raquo; ${(await this.program).name}`
+            } else {
+                const programs = await this.programs;
+
+                while (this.$list.firstChild)
+                    this.$list.removeChild(this.$list.firstChild);
+
+                programs.results.forEach(p => {
+                    this.appendProgram(p);
+                });
+
+                this.$pages.select("list");
+            }
+            this.dispatchEvent(new CustomEvent("subtitle-change", {
+                detail: {
+                    subtitle: subtitle
+                },
+                composed: true
+            }));
+        }
+
+        appendProgram(program) {
+            const $li = document.createElement("li");
+            const $program = new Sut.ProgramListItem(program);
+            $li.appendChild($program);
+            this.$list.appendChild($li);
+        }
+    }
+
+    window.Sut.Programs = Programs;
+    window.customElements.define("sut-programs", Programs);
+
+})();
+</script>

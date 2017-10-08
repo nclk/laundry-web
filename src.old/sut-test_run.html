@@ -277,6 +277,7 @@
             }
 
             _testRunChanged(testRun) {
+                console.log("Test run changed: ", testRun);
                 this.harvests = [];
                 this.$.progress.style.display = "none";
 

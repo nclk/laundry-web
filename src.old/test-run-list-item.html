@@ -101,9 +101,15 @@
                         observer: "_testRunChanged"
                     },
                     relation: {
-                        type: String
+                        type: String,
+                        observer: "_relationChanged"
                     }
                 };
+            }
+
+            _relationChanged(rel) {
+                console.log("relation changed: ", rel);
+                //throw new Error("You will never see this.");
             }
 
             _isTestRun(tr) {
@@ -157,6 +163,7 @@
             }
 
             _testRunChanged(testRun) {
+                console.log("_testRunChanged: ", testRun);
                 this.$.progress.style.display = "none";
 
                 if (this._isTestRun(testRun)) {

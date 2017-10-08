@@ -64,7 +64,7 @@
                     resource-type="[[selectedResourceType]]"
                     on-retest="_retest"
                     detail="{{detail}}"
-                    resource="{{selectedResource}}">
+                    resource="[[selectedResource]]">
             </sut-resource>
 
             <div name="result-list">
@@ -115,7 +115,12 @@
                 return {
                     sutApiBase: String,
                     route: {
-                        type: Object
+                        type: Object,
+                        observer: "_routeChanged"
+                    },
+                    resourceId: {
+                        type: String,
+                        observer: "_resourceIdChanged"
                     },
                     page: {
                         type: String,
@@ -147,12 +152,6 @@
                 };
             }
 
-            static get observers() {
-                return [ "_resourceIdChanged(routeData.resourceId)"
-                       , "_routeChanged(route)"
-                       ];
-            }
-
             _pop(e) {
                 return e.target.elevation = 3;
             }
@@ -182,11 +181,9 @@
             }
 
             _routeChanged(route) {
-                //console.log(route, this.routeData, this.resultSet);
-                this.set(
-                    "routeData.resourceId",
-                    !route.path ? "" : this.routeData.resourceId
-                );
+                this.resourceId = route.path
+                    ? this.routeData && this.routeData.resourceId
+                    : null;
             }
 
             _resourceIdChanged(resourceId) {
@@ -215,7 +212,8 @@
             }
 
             _resourceSelected(e) {
-                this.selectedResource = null;
+                //console.log("resource selected event: ", e.detail.resource.seed);
+                //this.selectedResource = null;
                 this.selectedResource = e.detail.resource;
             }
 

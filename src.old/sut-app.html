@@ -12,7 +12,6 @@
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
-<link rel="import" href="../bower_components/nclk-tree/nclk-tree.html">
 <link rel="import" href="../bower_components/progress-bar/progress-bar.html">
 <link rel="import" href="my-icons.html">
 <link rel="import" href="shared-styles.html">
@@ -133,7 +132,7 @@
                     <resource-list
                             name="resource-list"
                             route="{{subroute}}"
-                            sut-api-base="{{sutApiBase}}"
+                            sut-api-base="[[sutApiBase]]"
                             selected-resource-type="[[selectedResourceType]]">
                     </resource-list>
 
@@ -190,8 +189,16 @@
                     },
                     selectedResourceType: {
                         type: Object
+                    },
+                    route: {
+                        type: Object,
+                        observer: "_routeChanged"
                     }
                 };
+            }
+
+            _routeChanged(c, p) {
+                //console.log("Route changed!!!", c, p);
             }
 
             static get observers() {
@@ -270,6 +277,7 @@
                     this.page = !this.relation
                         ? "http-404"
                         : "resource-list";
+
                 }
 
             }

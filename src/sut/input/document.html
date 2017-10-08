@@ -1,0 +1,89 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/input/input.html">
+
+<link rel="import" href="/bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="/bower_components/juicy-ace-editor/juicy-ace-editor.html">
+
+
+<template class="DocumentInput">
+
+    <style>
+        juicy-ace-editor {
+            /*min-height: 200px;*/
+        }
+    </style>
+
+    <sut-input id="sut-input">
+        <span slot="buttons">
+            <paper-button id="reset">Reset</paper-button>
+        </span>
+        <juicy-ace-editor theme="ace/theme/chrome" wrapmode="true" mode="ace/mode/json"
+            id="input" slot="input"></juicy-ace-editor>
+    </sut-input>
+</template>
+
+<script>
+(() => {
+    
+    const _import = window.Sut._resolveImport("src/sut/input/document.html");
+
+    class DocumentInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
+
+        static get import() {
+            return _import;
+        }
+
+        constructor(configProfile) {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $input: {
+                    value: this.shadowRoot.getElementById("input")
+                },
+                $sutInput: {
+                    value: this.shadowRoot.getElementById("sut-input")
+                },
+                $reset: {
+                    value: this.shadowRoot.getElementById("reset")
+                }
+            });
+            this.$sutInput.configProfile = configProfile;
+
+            this.$reset.addEventListener(
+                "click", e => this.init()
+            );
+            if (this.$sutInput.widget["read-only"]) {
+                this.$reset.disabled = true;
+                this.$input.setAttribute("readonly", true);
+            }
+            this.$input.addEventListener("editor-ready", e => {
+                const editor = e.target.container.env.editor;
+                editor.setOptions({
+                    maxLines: Infinity
+                });
+            });
+            this.init();
+        }
+
+        init() {
+            this.$input.value = JSON.stringify(
+                this.$sutInput.configProfile.data, false, 4
+            );
+        }
+
+        get value() {
+            return {
+                [this.$sutInput.configProfile.name]: JSON.parse(
+                    this.$input.value
+                )
+            };
+        }
+
+    }
+
+    window.Sut.Input = window.Sut.Input || Object.create(null);
+    window.Sut.Input.DocumentInput = DocumentInput;
+    window.customElements.define("sut-input-document", DocumentInput);
+
+})();
+</script>

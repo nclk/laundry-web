@@ -111,6 +111,9 @@ http {
         location /src/ {
 		auth_request /auth;
 	}
+        location /lib/ {
+		auth_request /auth;
+	}
 	location /images/ {
 		auth_request /auth;
 	}

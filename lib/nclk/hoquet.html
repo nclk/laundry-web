@@ -1,0 +1,34 @@
+<script src="/bower_components/hoquet/index.js"></script>
+<script>
+(() => {
+    function setInnerHTML(shadow, template) {
+        shadow.innerHTML = hoquet.render(template);
+    }
+
+    function setTemplateContent(shadow, cls) {
+        let templates = cls.import
+            ? cls.import.querySelectorAll("template." + cls.name)
+            : [];
+
+        Array.prototype.forEach.call(templates, x => shadow.appendChild(
+            document.importNode(x.content, true)
+        ));
+    }
+
+    window.Nclk = window.Nclk || Object.create(null);
+    window.Nclk.Hoquet = (C) => class extends C {
+
+        get template() { return ""; };
+
+        render() {
+            let shadow = this.shadowRoot || this.attachShadow({mode:"open"});
+
+            setInnerHTML(shadow, this.template);
+            setTemplateContent(shadow, this.constructor);
+        }
+
+    }
+
+})()
+
+</script>

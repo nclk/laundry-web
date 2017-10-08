@@ -9,7 +9,8 @@ then
 	pkill -f "nginx: master"
 fi
 
-cp -R ./build/default/* /usr/share/nginx/html
+cp -R ./* /usr/share/nginx/html
+cp ./nginx.conf.template /etc/nginx/nginx.conf.template
 
 envsubst < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html
 envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf

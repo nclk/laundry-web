@@ -1,0 +1,152 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+
+<template class="Book">
+    <style>
+        paper-material div {
+            display: block;
+            background-color: #f0f0f0;
+            padding: 15px;
+            margin: 0;
+            height: 300px;
+            width: 200px;
+            background-size: cover;
+            border: 3px solid #fff;
+            position: relative;
+        }
+        paper-material a p {
+            margin: 0;
+            padding: 3px 0;
+        }
+        paper-material a p:nth-child(1) {
+            font-style: italic;
+            text-shadow: 0 3px 1px #3f3;
+            text-transform: uppercase;
+        }
+        paper-material a p:nth-child(2) {
+            color: #000;
+        }
+        paper-material a p:nth-child(3) {
+            font-weight: normal;
+        }
+        paper-material a {
+            margin: 2px;
+            padding: 5px;
+            background-color: #A0522D;
+            background-color: #8fc;
+            background-color: orange;
+            opacity: 0;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            content: "";
+            position: absolute;
+            transition: opacity .1s ease-in;
+
+            font-weight: bold;
+            font-size: 1.5em;
+            text-decoration: none;
+            color: #000;
+        }
+        paper-material a:hover {
+            opacity: 0.85;
+            transition: opacity .15s ease-in;
+        }
+        paper-material {
+            position: relative;
+            float: left;
+            margin: 17px 17px;
+        }
+    </style>
+</template>
+
+<script>
+((global) => {
+
+const _import = global.Sut._resolveImport("src/sut/book.html");
+
+class Book extends Nclk.Hoquet(HTMLElement) {
+
+    static get observedAttributes() {
+        return [
+            "title", "author", "body"
+        ];
+    }
+
+    static get import() { return _import; }
+
+    constructor(book) {
+        super();
+
+        Object.defineProperty(this, "model", {
+            value: book || {}
+        });
+
+    }
+
+    connectedCallback() {
+        this.render();
+        this.bind();
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        this.model[name] = newValue;
+        this.render();
+    }
+
+    get template() {
+        return (
+          [ "paper-material"
+          , { elevation: 1
+            , animated: null
+            }
+          , [ "div"
+            , { style: `background-image: url(${this.model.cover_image_thumbnail})`
+              }
+            , this.model.cover_image_thumbnail
+                ? "" : this.model.title
+            ]
+          , [ "a"
+            , { href: "javascript:void(0);"
+              }
+            , [ "p"
+              , this.model.title
+              ]
+            , [ "p"
+              , this.model.authors.join(", ")
+              ]
+            , [ "p"
+              , this.model.pub_date || ""
+              ]
+            ]
+          ]
+        );
+    }
+
+    pop() {
+        this.$paperMaterial.elevation = 3;
+    }
+
+    drop() {
+        this.$paperMaterial.elevation = 1;
+    }
+
+    bind() {
+        this.addEventListener("mouseenter", _ => this.pop());
+        this.addEventListener("mouseleave", _ => this.drop());
+    }
+
+    render() {
+        super.render();
+        this.$paperMaterial = this.shadowRoot.querySelector("paper-material");
+        this.$title = this.shadowRoot.querySelector(".book-title");
+    }
+
+}
+
+global.Sut.Book = Book;
+global.customElements.define("sut-book", Book);
+
+})(this);
+</script>

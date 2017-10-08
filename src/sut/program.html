@@ -1,0 +1,326 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/input/text.html">
+<link rel="import" href="/src/sut/input/named-list.html">
+<link rel="import" href="/src/sut/input/document.html">
+
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="/bower_components/iron-selector/iron-selector.html">
+
+
+<template class="Program">
+    <style>
+    /*form {
+        margin: 10px;
+    }*/
+    .container {
+        display: flex;
+        flex-direction: row;
+        padding: 10px;
+    }
+    .menu {
+        min-width: 15%;
+    }
+    .content {
+        min-width: 85%;
+    }
+    #config-profile-menu {
+        display: block;
+        margin: 10px 0 0 0;
+        border: 1px dotted #aaf;
+        padding: 10px;
+    }
+    #all {
+        display: none;
+    }
+    #run {
+        background: linear-gradient(145deg, #47f,  #7bf);
+        color: #fff;
+    }
+    #aliases {
+        display: none;
+        margin: 10px 0;
+        padding: 10px 10px 10px 25px;
+    }
+    #aliases h1 {
+        font-size: 1em;
+        margin: 0 0 7px 0;
+    }
+    #aliases ul {
+        list-style: none outside none;
+        margin: 0;
+        padding: 0;
+        background: #eee;
+    }
+    #aliases ul a {
+        text-decoration: none;
+        color: #47f;
+        color: #f33;
+    }
+
+    </style>
+    <div class="container">
+        <div class="menu">
+            <paper-button id="run" raised>RUN</paper-button>
+            <iron-selector id="config-profile-menu" attr-for-selected="name"
+                role="navigation">
+            </iron-selector>
+            <div id="aliases">
+                <h1>Includes:</h1>
+                <ul></ul>
+            </div>
+        </div>
+        <div class="content">
+            <form method="post" id="form">
+                <iron-pages id="input-pages" attr-for-selected="name" role="navigation">
+                </iron-pages>
+                <div id="all"></div>
+            </form>
+        </div>
+    </div>
+</template>
+
+<script>
+(() => {
+
+    const _import = window.Sut._resolveImport("src/sut/program.html");
+
+    class Program extends Nclk.Hoquet(HTMLElement) {
+        // some new things I'd like to see here:
+        // last 5 runs
+        // ability to edit objects/dictionary types
+        // standalone doc page?
+
+        static get import() {
+            return _import;
+        }
+
+        constructor(program, model, apiBase) {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $form: {
+                    value: this.shadowRoot.getElementById("form")
+                },
+                $inputPages: {
+                    value: this.shadowRoot.getElementById("input-pages")
+                },
+                $allPage: {
+                    value: this.shadowRoot.getElementById("all")
+                },
+                $configProfileMenu: {
+                    value: this.shadowRoot.getElementById("config-profile-menu")
+                },
+                $runButton: {
+                    value: this.shadowRoot.getElementById("run")
+                },
+                inputs: {
+                    value: []
+                },
+                apiBase: {
+                    value: apiBase
+                },
+                $aliases: {
+                    value: this.shadowRoot.getElementById("aliases")
+                }
+            });
+
+            this.bind();
+
+            if (model) this.model = model;
+            if (program) this.program = program;
+        }
+
+        get program() { return this._program }
+        set program(program) {
+            Object.defineProperty(this, "_program", {
+                value: program
+            });
+            this.model && this.init();
+        }
+
+        get model() { return this._model }
+        set model(model) {
+            Object.defineProperty(this, "_model", {
+                value: model
+            });
+            this.program && this.init();
+        }
+
+        get configProfileProgramMaps() {
+            return new Promise((resolve, reject) => {
+                const req = new Request(
+                    this.program["related-resources"]["config-profile-program-maps"]
+                );
+                fetch(req, {method: "GET"}).then(resp => {
+                    if (!resp.ok) { reject(resp) }
+                    else {
+                        resp.json().then(data => {
+                            resolve(data);
+                        });
+                    }
+                });
+            });
+        }
+
+        get configProfiles() {
+            return new Promise(async (resolve, reject) => {
+                if (this._configProfiles)
+                    resolve(this._configProfiles);
+                else {
+                    const maps = await this.configProfileProgramMaps;
+                    const req = new Request(
+                        `${
+                            this.model["Config Profiles"].href
+                        }?name=${
+                                maps.results.map(x=>x.config_profile).join(`&name=`)
+                        }&order=name`
+                    );
+                    fetch(req, {method: "GET"}).then(resp => {
+                        if (!resp.ok) reject(resp);
+                        else {
+                            resp.json().then(data => {
+                                Object.defineProperty(this, "_configProfiles", {
+                                    value: data
+                                });
+                                resolve(this._configProfiles);
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        resolutions() {
+            this.program.resolutions && this.program.resolutions.sort().map(r => {
+                const $li = document.createElement("li");
+                const $anchor = document.createElement("a");
+                $anchor.innerHTML = r;
+                $anchor.setAttribute("href", `/programs/${r}`);
+                $li.appendChild($anchor);
+                this.$aliases.querySelector("ul").appendChild($li);
+                this.$aliases.style.display = "block";
+            });
+        }
+
+        async init() {
+            const prog = this.program;
+            const configProfiles = (await this.configProfiles).results;
+            const $allSelector = document.createElement("paper-item");
+
+            $allSelector.innerHTML = "SHOW ALL";
+            $allSelector.setAttribute("name", "all");
+            $allSelector.style.color = "#16f";
+            this.$configProfileMenu.appendChild($allSelector);
+
+            this.resolutions();
+
+            window.inputs = [];
+            configProfiles.map(cp => {
+                let $input;
+                let $menuItem = document.createElement("paper-item");
+
+                switch (cpType(cp)) {
+                case "text":
+                    $input = new Sut.Input.TextInput(cp);
+                    break;
+                case "number":
+                    $input = new Sut.Input.NumberInput(cp);
+                    break;
+                case "named-list":
+                    $input = new Sut.Input.NamedListInput(cp);
+                    break;
+                case "document":
+                    $input = new Sut.Input.DocumentInput(cp);
+                    break;
+                default:
+                    $input = new Sut.Input.Input(cp);
+                    break;
+                }
+                this.inputs.push($input);
+                $input.setAttribute("name", cp.name);
+                $menuItem.setAttribute("name", cp.name);
+                $menuItem.innerHTML = cpDisplayName(cp);
+
+                return [$menuItem, $input];
+            }).forEach(els => {
+                this.$configProfileMenu.appendChild(els[0]);
+                this.$inputPages.appendChild(els[1]);
+                this.$allPage.appendChild(els[1]);
+            });
+            this.$configProfileMenu.select("all");
+            $allSelector.focus();
+        }
+
+        runTest() {
+            const body = {
+                program_name: this.program.name,
+                harvest_keys: [ "$bot" ],
+                env: [
+                    this.inputs.map(x => x.value).reduce(
+                        (p, c) => Object.assign(p, c)
+                    )
+                ]
+            };
+            const req = new Request(
+                this.apiBase + "/actions/run"
+            );
+            fetch(req, {
+                method: "POST",
+                headers: new Headers({
+                    "Content-Type": "application/json"
+                }),
+                body: JSON.stringify(body)
+            }).then(resp => {
+                if (!resp.ok) {
+                    throw `Failed to create test run. Status was ${resp.status}`
+                } else {
+                    resp.json().then(data => {
+                        window.history.pushState(
+                            {}, null, "/test-runs/" + data.test_run_id);
+                        window.dispatchEvent(new CustomEvent('location-changed'));
+                    });
+                }
+            });
+        }
+
+        showSelected(selected) {
+            if (selected === "all") {
+                while (this.$inputPages.firstChild)
+                    this.$allPage.appendChild(this.$inputPages.firstChild);
+                this.$allPage.style.display = "block";
+            }
+            else {
+                while (this.$allPage.firstChild)
+                    this.$inputPages.appendChild(this.$allPage.firstChild);
+                this.$allPage.style.display = "none";
+            }
+            this.$inputPages.select(selected);
+        }
+
+        bind() {
+            this.$runButton.addEventListener("click", _ => this.runTest());
+
+            this.$form.addEventListener("submit", e => {
+                e.preventDefault();
+            });
+
+            this.$configProfileMenu.addEventListener(
+                "selected-changed", (e => this.showSelected(e.target.selected))
+            );
+        }
+    }
+
+    window.Sut.Program = Program;
+    window.customElements.define("sut-program", Program);
+
+    function cpDisplayName(cp) {
+        return cp && cp.meta && cp.meta.name || cp.name;
+    }
+    function cpType(cp) {
+        return cp.meta && cp.meta.widget && cp.meta.widget.type;
+    }
+
+})()
+</script>

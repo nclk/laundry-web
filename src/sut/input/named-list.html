@@ -1,0 +1,146 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/input/input.html">
+
+<link rel="import" href="/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/bower_components/paper-checkbox/paper-checkbox.html">
+
+
+<template class="NamedListInput">
+
+    <style>
+    #input {
+        display: flex;
+        flex-direction: row;
+        flex-flow: row wrap;
+    }
+    paper-checkbox {
+        min-width: 250px;
+        margin: 10px 10px;
+    }
+    </style>
+
+    <sut-input id="sut-input">
+        <span slot="buttons">
+            <paper-button id="all">All</paper-button>
+            <paper-button id="none">None</paper-button>
+            <paper-button id="reset">Reset</paper-button>
+        </span>
+        <div id="input" slot="input"></div>
+    </sut-input>
+</template>
+
+<script>
+(() => {
+    
+    const _import = window.Sut._resolveImport("src/sut/input/named-list.html");
+
+    class NamedListInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
+
+        static get import() {
+            return _import;
+        }
+
+        constructor(configProfile) {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $input: {
+                    value: this.shadowRoot.getElementById("input")
+                },
+                $sutInput: {
+                    value: this.shadowRoot.getElementById("sut-input")
+                },
+                $all: {
+                    value: this.shadowRoot.getElementById("all")
+                },
+                $none: {
+                    value: this.shadowRoot.getElementById("none")
+                },
+                $reset: {
+                    value: this.shadowRoot.getElementById("reset")
+                }
+            });
+            this.$sutInput.configProfile = configProfile;
+
+            [ ["$all",{all: true}]
+            , ["$none", {none: true}]
+            , ["$reset", {}]
+            ].forEach(x => {
+                this[x[0]].addEventListener(
+                    "click", e => this.filter(x[1])
+                );
+                if (this.$sutInput.widget["read-only"]) {
+                    this[x[0]].disabled = true;
+                }
+            });
+            this.init();
+        }
+
+        init() {
+            const configProfile = this.$sutInput.configProfile;
+            const data = configProfile.data;
+            const widget = this.$sutInput.widget;
+            const $input = this.$input;
+
+            while ($input.firstChild)
+                $input.removeChild($input.firstChild);
+
+            data.sort((a,b) => {
+                return widget.attr
+                    ? a[widget.attr].localeCompare(b[widget.attr])
+                    : a.localeCompare(b);
+            }).forEach(x => {
+                const name = _name(widget, x);
+                const $checkbox = document.createElement("paper-checkbox");
+
+                $checkbox.value = x;
+                $checkbox.innerHTML = widget.capitalize
+                    ? name.toUpperCase()
+                    : name;
+
+                if (widget["read-only"])
+                    $checkbox.disabled = true;
+
+                $input.appendChild($checkbox);
+            });
+            this.filter();
+        }
+
+        filter(options = {}) {
+            const { all: all, none: none } = options;
+            const widget = this.$sutInput.widget;
+
+            Array.prototype.forEach.call(this.$input.childNodes, $checkbox => {
+                const name = _name(widget, $checkbox.value);
+                $checkbox.checked = all ? true
+                    : none ? false
+                    : widget.filter ? ~widget.filter.indexOf(name)
+                    : widget.remove ? !~widget.remove.indexOf(name)
+                    : true;
+            });
+
+        }
+
+        get value() {
+            return {
+                [this.$sutInput.configProfile.name]: Array.prototype.map.call(
+                    this.$input.childNodes, $checkbox =>
+                        $checkbox.checked && $checkbox.value
+                ).filter(x => x)
+            };
+        }
+
+    }
+
+    window.Sut.Input = window.Sut.Input || Object.create(null);
+    window.Sut.Input.NamedListInput = NamedListInput;
+    window.customElements.define("sut-input-named-list", NamedListInput);
+
+    function _name(widget, x) {
+        return widget.attr
+            ? x[widget.attr]
+            : x;
+    }
+
+})();
+</script>

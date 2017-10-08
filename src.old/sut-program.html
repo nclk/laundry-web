@@ -42,7 +42,7 @@
             <span>[[program.documentation.description]]</span>
         </paper-material>
 
-        <iron-form id="form">
+        <!-- <iron-form id="form"> -->
             <form method="post" action$="{{sutApiBase}}/actions/run">
                 <paper-button style="" raised on-click="_submit">Run</paper-button>
                 <template is="dom-repeat" items="[[configProfiles]]">
@@ -50,11 +50,11 @@
                             id="[[_envName(item)]]"
                             name="[[_envName(item)]]"
                             default="[[_default(item, env)]]"
-                            config-profile="{{item}}">
+                            config-profile="[[item]]">
                     </nclk-config-editor>
                 </template>
             </form>
-        </iron-form>
+        <!-- </iron-form> -->
     </template>
     <script>
         class SutProgram extends Polymer.Element {
@@ -104,8 +104,9 @@
                 return data;
             }
 
-            _configProfilesChanged(cps) {
-                console.log(cps);
+            _configProfilesChanged(cps, ops) {
+                //console.log(cps);
+                //console.log(cps, ops);
             }
 
             _testRunChanged(tr) {
@@ -127,12 +128,10 @@
             }
 
             _handleConfigProfiles(e) {
-                this.set(
-                    "configProfiles",
+                this.configProfiles = 
                     JSON.parse(JSON.stringify(e.target.lastResponse.results)).sort(
                         (a, b) => a.name.localeCompare(b.name)
                     )
-                );
             }
 
             _handleConfigProfileProgramMaps(e) {
@@ -155,15 +154,6 @@
 
             _programChanged(program) {
                 if (program) {
-                    //if (this.env) {
-                    //    return this.configProfiles = Object.keys(this.env).map(
-                    //        (key) => {
-                    //            let entry = {};
-                    //            entry[key] = this.env[key];
-                    //            return { data: entry };
-                    //        }
-                    //    );
-                    //}
                     const $ajax = this.$.ajax.cloneNode(true);
                     $ajax.url = program["related-resources"][
                         "config-profile-program-maps"

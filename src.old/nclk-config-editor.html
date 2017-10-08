@@ -1,6 +1,5 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/paper-input/paper-textarea.html">
-<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
@@ -214,7 +213,7 @@
 
             _pop(e) {
                 e.target.elevation = 3;
-                console.log(this._data(), this.checkboxList, this._checkboxes());
+                //console.log(this._data(), this.checkboxList, this._checkboxes());
             }
 
             _drop(e) {
@@ -274,14 +273,11 @@
             _configProfileChanged(cp) {
                 const data = this._data(cp.data[Object.keys(cp.data)[0]]);
                 this.dataType = Type.type(data);
+                console.log("config profile changed: ", this.dataType, data);
                 if (this.dataType === "array") {
-                    console.log(this.configProfile.name + "1", this.checkboxList);
-                    this.set("checkboxList", this._sortArrayValue(data.slice()));
-                    console.log(this.configProfile.name, this.checkboxList);
-                    //this._sortArrayValue(data);
+                    this.checkboxList = this._sortArrayValue(data.slice());
                     setTimeout(() => {
                         this._filterArrayValue(data);
-                        console.log(this.configProfile.name + "2", this.checkboxList);
                         setTimeout(() => {
                             this._defaultChanged(this.default);
                         }, 0);

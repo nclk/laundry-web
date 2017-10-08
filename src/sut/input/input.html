@@ -1,0 +1,111 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/lib/nclk/input.html">
+
+<link rel="import" href="/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+<link rel="import" href="/bower_components/paper-tooltip/paper-tooltip.html">
+
+
+<template class="Input">
+
+    <style>
+    paper-material {
+        clear: both;
+        display: block;
+        padding: 10px;
+        background-color: #f5f5f5;
+        margin: 0 0 20px 0;
+        border-radius: 2px;
+    }
+    h1 {
+        margin: 0;
+        padding: 3px 0 0 0;
+        float: left;
+        font-size: 1.5em;
+    }
+    #documentation {
+        background-color: #fcfafa;
+        /*background-color: inherit;*/
+        color: #555;
+    }
+    .outer {
+        /*background: linear-gradient(180deg, #8cf, #4af);
+        background: #8cf;
+        color: #fff;*/
+        color: #333;
+    }
+    #container {
+        background: #fcfcfe;
+    }
+    </style>
+
+    <paper-material class="outer" elevation="2">
+        <header>
+            <h1></h1>
+            <slot name="buttons"></slot>
+        </header>
+        <paper-material elevation="1" id="container">
+            <slot name="input"></slot>
+        </paper-material>
+        <paper-material elevation="0" id="documentation">
+        </paper-material>
+    </paper-material>
+</template>
+
+<script>
+(() => {
+    
+    const _import = window.Sut._resolveImport("src/sut/input/input.html");
+
+    class Input extends Nclk.Hoquet(HTMLElement) {
+
+        static get import() {
+            return _import;
+        }
+
+        constructor(configProfile) {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $documentation: {
+                    value: this.shadowRoot.getElementById("documentation")
+                },
+                $headerH1: {
+                    value: this.shadowRoot.querySelector("header > h1")
+                }
+            });
+
+            if (configProfile)
+                this.configProfile = configProfile;
+        }
+
+        get configProfile() { return this._configProfile }
+        set configProfile(configProfile) {
+            Object.defineProperties(this, {
+                _configProfile: {
+                    value: configProfile
+                },
+                widget: {
+                    value: configProfile.meta && configProfile.meta.widget
+                }
+            });
+            this.init();
+        }
+
+        init() {
+            this.$documentation.innerHTML = this.configProfile.documentation.description;
+            this.$headerH1.innerHTML = cpDisplayName(this.configProfile);
+        }
+
+    }
+
+    window.Sut.Input = window.Sut.Input || Object.create(null);
+    window.Sut.Input.Input = Input;
+    window.customElements.define("sut-input", Input);
+
+    function cpDisplayName(cp) {
+        return cp && cp.meta && cp.meta.name || cp.name;
+    }
+
+})();
+</script>

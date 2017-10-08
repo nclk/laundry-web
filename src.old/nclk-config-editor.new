@@ -1,0 +1,38 @@
+<script>
+(() => {
+
+class NclkConfigEditor extends HTMLElement {
+    static get observedAttributes() {
+        return [
+            "id", "name", "default", "config-profile"
+        ];
+    }
+
+    constructor() {
+        super();
+        let shadow = this.shadowRoot || this.attachShadow({mode: "open"});
+        this.innerHTML = `<input type="text" name="foo" value="foo">`;
+        this.$input = this.querySelector("input");
+    }
+
+    connectedCallback() {
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === "config-profile") {
+            try {
+                this.data = JSON.parse(newValue);
+            } catch (e) {
+                this.data = newValue;
+            }
+            console.log(this.data);
+        } else if (name === "name") {
+            this.$input.name = newValue;
+        }
+    }
+}
+
+window.customElements.define("nclk-config-editor", NclkConfigEditor);
+
+})()
+</script>

@@ -14,6 +14,5 @@ ADD ./nginx.conf.template /etc/nginx/nginx.conf.template
 ADD ./bin/init /usr/bin/init-sutweb
 RUN npm i -g polymer-cli bower
 RUN bower install --allow-root -F
-RUN polymer build
 
 #CMD [ "bash", "/usr/bin/init-sutweb" ]
