@@ -9,7 +9,7 @@
 <link rel="import" href="/bower_components/iron-selector/iron-selector.html">
 
 
-<template class="Program">
+<template>
     <style>
     /*form {
         margin: 10px;
@@ -96,7 +96,7 @@
             return _import;
         }
 
-        constructor(program, model, apiBase) {
+        constructor(program, configProfilesHref, apiBase) {
             super();
             this.render();
             Object.defineProperties(this, {
@@ -128,7 +128,7 @@
 
             this.bind();
 
-            if (model) this.model = model;
+            if (configProfilesHref) this.configProfilesHref = configProfilesHref;
             if (program) this.program = program;
         }
 
@@ -137,15 +137,13 @@
             Object.defineProperty(this, "_program", {
                 value: program
             });
-            this.model && this.init();
         }
 
-        get model() { return this._model }
-        set model(model) {
-            Object.defineProperty(this, "_model", {
-                value: model
+        get configProfilesAPI() { return this._cphref }
+        set configProfilesHref(href) {
+            Object.defineProperty(this, "_cphref", {
+                value: href
             });
-            this.program && this.init();
         }
 
         get configProfileProgramMaps() {
@@ -171,10 +169,8 @@
                 else {
                     const maps = await this.configProfileProgramMaps;
                     const req = new Request(
-                        `${
-                            this.model["Config Profiles"].href
-                        }?name=${
-                                maps.results.map(x=>x.config_profile).join(`&name=`)
+                        `${this.configProfilesHref}?name=${
+                            maps.results.map(x=>x.config_profile).join(`&name=`)
                         }&order=name`
                     );
                     fetch(req, {method: "GET"}).then(resp => {

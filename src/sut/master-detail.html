@@ -1,0 +1,124 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/bower_components/app-route/app-route.html">
+
+<template>
+    <app-route id="route" pattern="/:id"></app-route>
+    <iron-pages id="pages" fallback-selection="master" role="XXX">
+    </iron-pages>
+
+</template>
+
+<script>
+(() => {
+    class MasterDetail extends Nclk.Hoquet(HTMLElement) {
+
+        constructor() {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $pages: { value: this.shadowRoot.getElementById("pages") },
+                $route: { value: this.shadowRoot.getElementById("route") },
+                resultSet: { value: {}, writable: true }
+            });
+        }
+
+        set route(route) {
+            this.$route.route = route;
+        }
+
+        get api() { return this._api }
+        set api(api) {
+            Object.defineProperty(this, "_api", {
+                value: api
+            });
+        }
+
+        get apiBase() { return this._apiBase }
+        set apiBase(base) {
+            Object.defineProperty(this, "_apiBase", {
+                value: base
+            });
+        }
+
+        get order() { return this._order }
+        set order(order) {
+            Object.defineProperty(this, "_order", {
+                value: order
+            });
+        }
+
+        get idPredicate() { return this._idPredicate }
+        set idPredicate(pred) {
+            Object.defineProperty(this, "_idPredicate", {
+                value: pred
+            })
+        }
+
+        resourceReceivedPipeline(r) {
+            return;
+        }
+
+        get resources() {
+            return new Promise((resolve, reject) => {
+                if (this.resultSet.results) {
+                    resolve(this.resultSet);
+                } else {
+                    const req = new Request(`${this.api.href}?order=${this.order}`);
+                    fetch(req, {
+                        method: "GET"
+                    }).then((resp) => {
+                        if (!resp.ok) {
+                            reject(resp);
+                        } else {
+                            resp.json().then(data => {
+                                this.resultSet = data;
+                                this.resultSet.results.forEach(
+                                    x => this.resourceReceivedPipeline(x)
+                                );
+                                resolve(this.resultSet);
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        async _getSelectedResource() {
+            const resources = await this.resources;
+            const candidates =
+                resources.results.filter(
+                    x => this.idPredicate(x)
+                );
+            return candidates.length && candidates[0];
+        }
+
+        get selectedResource() {
+            return this._getSelectedResource();
+        }
+
+        harvest(data, key) {
+            return (
+                [data].reduce(function go(p,c) {
+                    if (c && typeof c === "object") {
+                        return Object.keys(c).map(k => c[k]).reduce(
+                            go, p.concat(
+                                Object.keys(c).filter(k => k === key).map(
+                                    k => c[k]
+                                )
+                            )
+                        );
+                    } else if (Array.isArray(c)) {
+                        return c.reduce(go, p);
+                    }
+                    return p;
+                }, [])
+            );
+        }
+
+    }
+
+    window.Sut.MasterDetail = MasterDetail;
+    window.customElements.define("sut-master-detail", MasterDetail);
+
+})();
+</script>

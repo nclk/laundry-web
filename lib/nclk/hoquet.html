@@ -1,32 +1,41 @@
 <script src="/bower_components/hoquet/index.js"></script>
 <script>
 (() => {
-    function setInnerHTML(shadow, template) {
-        shadow.innerHTML = hoquet.render(template);
-    }
-
-    function setTemplateContent(shadow, cls) {
-        let templates = cls.import
-            ? cls.import.querySelectorAll("template." + cls.name)
-            : [];
-
-        Array.prototype.forEach.call(templates, x => shadow.appendChild(
-            document.importNode(x.content, true)
-        ));
-    }
-
     window.Nclk = window.Nclk || Object.create(null);
-    window.Nclk.Hoquet = (C) => class extends C {
+    window.Nclk.Hoquet = (C) => {
+        const ownerDocument = (
+            document._currentScript || document.currentScript
+        ).ownerDocument;
+        const _templates = ownerDocument.querySelectorAll("template");
 
-        get template() { return ""; };
+        return class extends C {
 
-        render() {
-            let shadow = this.shadowRoot || this.attachShadow({mode:"open"});
+            get template() { return ""; };
 
-            setInnerHTML(shadow, this.template);
-            setTemplateContent(shadow, this.constructor);
+            get templates() {
+                return _templates;
+            }
+
+            hoquet(template) {
+                return hoquet.render(template || this.template);
+            }
+
+            appendTemplateContent() {
+                const templates = this.templates;
+
+                Array.prototype.forEach.call(templates, x => this.shadowRoot.appendChild(
+                    document.importNode(x.content, true)
+                ));
+            }
+
+            render() {
+                let shadow = this.shadowRoot || this.attachShadow({mode:"open"});
+
+                this.shadowRoot.innerHTML = this.hoquet();
+                this.appendTemplateContent(shadow);
+            }
+
         }
-
     }
 
 })()

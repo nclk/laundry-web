@@ -1,9 +1,9 @@
 <link rel="import" href="/lib/nclk/hoquet.html">
-<link rel="import" href="/bower_components/app-route/app-route.html">
+<link rel="import" href="/src/sut/master-detail.html">
 <link rel="import" href="/src/sut/program.html">
 <link rel="import" href="/src/sut/program-list-item.html">
 
-<template class="Programs">
+<template>
     <style>
         ol {
             list-style-type: none;
@@ -19,138 +19,74 @@
             transition: all 0.5s ease-out;
         }
     </style>
-    <app-route id="route" pattern="/:name"></app-route>
-    <iron-pages id="pages" attr-for-selected="name" fallback-selection="list"
-        role="XXX">
-        <ol id="list" name="list"></ol>
-        <div id="detail" name="detail"></div>
-    </iron-pages>
+
 </template>
 
 <script>
 (() => {
 
-    const _import = window.Sut._resolveImport("src/sut/programs.html");
+    const ownerDocument = (
+        document._currentScript || document.currentScript
+    ).ownerDocument;
+    const _template = ownerDocument.querySelector("template");
 
-    class Programs extends Nclk.Hoquet(HTMLElement) {
+    class Programs extends Sut.MasterDetail {
 
         constructor() {
             super();
 
-            this.render();
+            this.shadowRoot.appendChild(
+                document.importNode(_template.content, true)
+            );
 
             Object.defineProperties(this, {
-                $pages: {
-                    value: this.shadowRoot.getElementById("pages")
-                },
                 $list: {
-                    value: this.shadowRoot.getElementById("list")
+                    value: document.createElement("ol")
                 },
                 $detail: {
-                    value: this.shadowRoot.getElementById("detail")
-                },
-                $route: {
-                    value: this.shadowRoot.getElementById("route")
+                    value: document.createElement("div")
                 }
             });
-        }
 
-        static get import() {
-            return _import;
-        }
+            this.$list.setAttribute("name", "master");
+            this.$detail.setAttribute("name", "detail");
+            this.$pages.appendChild(this.$list);
+            this.$pages.appendChild(this.$detail);
+            this.$pages.attrForSelected = "name";
 
-        set route(route) {
-            this.$route.route = route;
-            this.init();
-        }
-
-        get model() { return this._model; }
-        set model(model) {
-            Object.defineProperty(this, "_model", {
-                value: model
-            });
-        }
-
-        get programs() {
-            return new Promise((resolve, reject) => {
-                if (this.model.Programs.resultSet) {
-                    resolve(this.model.Programs.resultSet);
-                } else {
-                    const req = new Request(`${this.model.Programs.href}?order=name`);
-                    fetch(req, {
-                        method: "GET"
-                    }).then((resp) => {
-                        if (!resp.ok) {
-                            reject(resp);
-                        } else {
-                            resp.json().then(data => {
-                                this.model.Programs.resultSet = data;
-                                this.model.Programs.resultSet.results.map(p => {
-                                    // XXX: doesn't it seem like this would be expensive?
-                                    p.resolutions = this.harvest(p.data, "resolve");
-                                    p.modules = this.harvest(p.data, "module");
-                                });
-                                resolve(data);
-                            });
-                        }
-                    });
-                }
-            });
-        }
-
-        async _getProgram() {
-            const programs = await this.programs;
-            const candidates =
-                programs.results.filter(
-                    x => x.name === this.$route.data.name
-                );
-            return candidates.length && candidates[0];
-        }
-
-        get program() {
-            const program = this._getProgram();
-            return program;
-        }
-
-        get apiBase() { return this._apiBase }
-        set apiBase(base) {
-            Object.defineProperty(this, "_apiBase", {
-                value: base
-            });
-        }
-
-        harvest(data, key) {
-            return (
-                [data].reduce(function go(p,c) {
-                    if (c && typeof c === "object") {
-                        return Object.keys(c).map(k => c[k]).reduce(
-                            go, p.concat(
-                                Object.keys(c).filter(k => k === key).map(
-                                    k => c[k]
-                                )
-                            )
-                        );
-                    } else if (Array.isArray(c)) {
-                        return c.reduce(go, p);
-                    }
-                    return p;
-                }, [])
+            this.$route.pattern = "/:name";
+            this.idKey = "name";
+            this.order = this.idKey;
+            this.idPredicate = x => (
+                x[this.idKey] === this.$route.data[this.idKey]
             );
         }
 
-        async init() {
+        get configProfilesHref() { return this._cphref }
+        set configProfilesHref(href) {
+            Object.defineProperty(this, "_cphref", {
+                value: href
+            });
+        }
 
+        resourceReceivedPipeline(r) {
+            // XXX: doesn't it seem like this would be expensive?
+            r.resolutions = this.harvest(r.data, "resolve");
+            r.modules = this.harvest(r.data, "module");
+        }
+
+        async init() {
             let subtitle = "programs";
             if (this.$route.active) {
                 const $program = new Sut.Program(
-                    await this.program, this.model, this.apiBase);
+                    await this.selectedResource, this.configProfilesHref, this.apiBase);
                 this.$detail.firstChild && this.$detail.removeChild(
                     this.$detail.firstChild);
                 this.$detail.appendChild($program);
                 this.$pages.select("detail");
-                subtitle += `&nbsp;&raquo; ${(await this.program).name}`
+                subtitle += `&nbsp;&raquo; ${(await this.selectedResource).name}`
             } else {
-                const programs = await this.programs;
+                const programs = await this.resources;
 
                 while (this.$list.firstChild)
                     this.$list.removeChild(this.$list.firstChild);
@@ -159,7 +95,7 @@
                     this.appendProgram(p);
                 });
 
-                this.$pages.select("list");
+                this.$pages.select("master");
             }
             this.dispatchEvent(new CustomEvent("subtitle-change", {
                 detail: {
