@@ -123,9 +123,8 @@
                         reject(resp);
                     } else {
                         resp.json().then(data => {
-                            resolve(
-                                this.resourceReceivedPipeline(data)
-                            );
+                            this.resourceReceivedPipeline(data)
+                            resolve(data);
                         });
                     }
                 });
