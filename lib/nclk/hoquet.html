@@ -3,6 +3,7 @@
 (() => {
     window.Nclk = window.Nclk || Object.create(null);
     window.Nclk.Hoquet = (C) => {
+
         const ownerDocument = (
             document._currentScript || document.currentScript
         ).ownerDocument;
@@ -17,7 +18,11 @@
             }
 
             hoquet(template) {
-                return hoquet.render(template || this.template);
+                return hoquet.render(
+                    typeof template === "undefined"
+                        ? this.template
+                        : template
+                );
             }
 
             appendTemplateContent() {

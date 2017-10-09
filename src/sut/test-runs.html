@@ -1,7 +1,6 @@
 <link rel="import" href="/lib/nclk/hoquet.html">
 <link rel="import" href="/src/sut/master-detail.html">
-<link rel="import" href="/src/sut/program.html">
-<link rel="import" href="/src/sut/program-list-item.html">
+<link rel="import" href="/src/sut/test-run-list-item.html">
 
 <template>
     <style>
@@ -10,11 +9,11 @@
             margin: 0;
             padding: 0;
         }
-        sut-program-list-item {
+        sut-test-run-list-item {
             float: left;
-            width: 200px;
+            /*width: 200px;*/
         }
-        sut-program-list-item:hover {
+        sut-test-run-list-item:hover {
             background: #fff;
             transition: all 0.5s ease-out;
         }
@@ -29,7 +28,7 @@
     ).ownerDocument;
     const _template = ownerDocument.querySelector("template");
 
-    class Programs extends Sut.MasterDetail {
+    class TestRuns extends Sut.MasterDetail {
 
         constructor() {
             super();
@@ -47,37 +46,25 @@
                 }
             });
 
-            this.$list.setAttribute("name", "master");
-            this.$detail.setAttribute("name", "detail");
-            this.$pages.appendChild(this.$list);
-            this.$pages.appendChild(this.$detail);
-            this.$pages.attrForSelected = "name";
+            this.containers = [this.$list, this.$detail];
 
             this.$route.pattern = "/:name";
-            this.order = "name";
+            this.order = "created";
+            this.direction = "desc";
             this.idPredicate = x => (
-                x["name"] === this.$route.data["name"]
+                x["id"] === this.$route.data["id"]
             );
         }
 
-        get configProfilesHref() { return this._cphref }
-        set configProfilesHref(href) {
-            Object.defineProperty(this, "_cphref", {
-                value: href
-            });
-        }
-
-        resourceReceivedPipeline(r) {
-            // XXX: doesn't it seem like this would be expensive?
-            r.resolutions = this.harvest(r.data, "resolve");
-            r.modules = this.harvest(r.data, "module");
-        }
+        resourceReceivedPipeline(r) { }
 
         async init() {
-            let subtitle = "Programs";
+            let subtitle = "Test Runs";
+
+            this.resultSet = {};
+
             if (this.$route.active) {
-                const $program = new Sut.Program(
-                    await this.selectedResource, this.configProfilesHref, this.apiBase);
+                const $testRun = new Sut.TestRun(await this.selectedResource);
                 this.$detail.firstChild && this.$detail.removeChild(
                     this.$detail.firstChild);
                 this.$detail.appendChild($program);
@@ -91,7 +78,7 @@
                     this.$list.removeChild(this.$list.firstChild);
 
                 programs.results.forEach(p => {
-                    this.appendProgram(p);
+                    this.appendTestRun(p);
                 });
 
                 this.$pages.select("master");
@@ -104,16 +91,16 @@
             }));
         }
 
-        appendProgram(program) {
+        appendTestRun(program) {
             const $li = document.createElement("li");
-            const $program = new Sut.ProgramListItem(program);
+            const $program = new Sut.TestRunListItem(program);
             $li.appendChild($program);
             this.$list.appendChild($li);
         }
     }
 
-    window.Sut.Programs = Programs;
-    window.customElements.define("sut-programs", Programs);
+    window.Sut.TestRuns = TestRuns;
+    window.customElements.define("sut-test-runs", TestRuns);
 
 })();
 </script>

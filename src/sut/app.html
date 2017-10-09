@@ -1,5 +1,6 @@
 <link rel="import" href="/lib/nclk/hoquet.html">
 <link rel="import" href="/src/sut/programs.html">
+<link rel="import" href="/src/sut/test-runs.html">
 
 <link rel="import" href="/bower_components/iron-icons/iron-icons.html">
 <link rel="import"
@@ -182,6 +183,7 @@
                 this.$programs.api = api.Programs;
                 this.$programs.configProfilesHref = api["Config Profiles"].href;
                 this.$programs.apiBase = newValue;
+                this.$testRuns.api = api["Test Runs"];
                 this.init();
                 break;
             }
@@ -202,6 +204,7 @@
             case "test-runs":
                 this.$testRuns.route = this.$route.tail;
                 this.$pages.select("test-runs");
+                this.$testRuns.init();
                 break;
             default:
                 const drt = this.getAttribute("default-resource-type");

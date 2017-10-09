@@ -3,7 +3,7 @@
 
 <template>
     <app-route id="route" pattern="/:id"></app-route>
-    <iron-pages id="pages" fallback-selection="master" role="XXX">
+    <iron-pages id="pages" attr-for-selected="name" fallback-selection="master" role="XXX">
     </iron-pages>
 
 </template>
@@ -24,6 +24,14 @@
 
         set route(route) {
             this.$route.route = route;
+        }
+
+        set containers(containers) {
+            const [$master, $detail] = containers;
+            $master.setAttribute("name", "master");
+            $detail.setAttribute("name", "detail");
+            this.$pages.appendChild(this.$list);
+            this.$pages.appendChild(this.$detail);
         }
 
         get api() { return this._api }
@@ -47,6 +55,13 @@
             });
         }
 
+        get direction() { return this._direction }
+        set direction(direction) {
+            Object.defineProperty(this, "_direction", {
+                value: direction
+            });
+        }
+
         get idPredicate() { return this._idPredicate }
         set idPredicate(pred) {
             Object.defineProperty(this, "_idPredicate", {
@@ -63,7 +78,15 @@
                 if (this.resultSet.results) {
                     resolve(this.resultSet);
                 } else {
-                    const req = new Request(`${this.api.href}?order=${this.order}`);
+
+                    const req = new Request(`${
+                        this.api.href
+                    }?order=${
+                        this.order
+                    }&direction=${
+                        this.direction || "asc"
+                    }`);
+
                     fetch(req, {
                         method: "GET"
                     }).then((resp) => {
@@ -118,7 +141,6 @@
     }
 
     window.Sut.MasterDetail = MasterDetail;
-    window.customElements.define("sut-master-detail", MasterDetail);
 
 })();
 </script>

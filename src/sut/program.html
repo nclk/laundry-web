@@ -54,9 +54,12 @@
         background: #eee;
     }
     #aliases ul a {
-        text-decoration: none;
+        /*text-decoration: none;*/
         color: #47f;
         color: #f33;
+    }
+    #aliases ul a:hover {
+        text-decoration: underline;
     }
 
     </style>
@@ -84,17 +87,11 @@
 <script>
 (() => {
 
-    const _import = window.Sut._resolveImport("src/sut/program.html");
-
     class Program extends Nclk.Hoquet(HTMLElement) {
         // some new things I'd like to see here:
         // last 5 runs
         // ability to edit objects/dictionary types
         // standalone doc page?
-
-        static get import() {
-            return _import;
-        }
 
         constructor(program, configProfilesHref, apiBase) {
             super();
@@ -128,6 +125,8 @@
 
             this.bind();
 
+            console.log(configProfilesHref);
+
             if (configProfilesHref) this.configProfilesHref = configProfilesHref;
             if (program) this.program = program;
         }
@@ -139,7 +138,7 @@
             });
         }
 
-        get configProfilesAPI() { return this._cphref }
+        get configProfilesHref() { return this._cphref }
         set configProfilesHref(href) {
             Object.defineProperty(this, "_cphref", {
                 value: href
@@ -163,13 +162,14 @@
         }
 
         get configProfiles() {
+            const href = this.configProfilesHref;
             return new Promise(async (resolve, reject) => {
                 if (this._configProfiles)
                     resolve(this._configProfiles);
                 else {
                     const maps = await this.configProfileProgramMaps;
                     const req = new Request(
-                        `${this.configProfilesHref}?name=${
+                        `${href}?name=${
                             maps.results.map(x=>x.config_profile).join(`&name=`)
                         }&order=name`
                     );
@@ -274,7 +274,7 @@
                 } else {
                     resp.json().then(data => {
                         window.history.pushState(
-                            {}, null, "/test-runs/" + data.test_run_id);
+                            {}, null, "/test-runs"); ///" + data.test_run_id);
                         window.dispatchEvent(new CustomEvent('location-changed'));
                     });
                 }
