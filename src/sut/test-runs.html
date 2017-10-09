@@ -1,6 +1,7 @@
 <link rel="import" href="/lib/nclk/hoquet.html">
 <link rel="import" href="/src/sut/master-detail.html">
 <link rel="import" href="/src/sut/test-run-list-item.html">
+<link rel="import" href="/src/sut/test-run.html">
 
 <template>
     <style>
@@ -48,7 +49,7 @@
 
             this.containers = [this.$list, this.$detail];
 
-            this.$route.pattern = "/:name";
+            this.$route.pattern = "/:id";
             this.order = "created";
             this.direction = "desc";
             this.idPredicate = x => (
@@ -65,12 +66,19 @@
 
             if (this.$route.active) {
                 const $testRun = new Sut.TestRun(await this.selectedResource);
+                const testRun = await this.selectedResource;
                 this.$detail.firstChild && this.$detail.removeChild(
                     this.$detail.firstChild);
-                this.$detail.appendChild($program);
+                this.$detail.appendChild($testRun);
                 this.$pages.select("detail");
-                subtitle += `&nbsp;&raquo; ${(await this.selectedResource).name}`
-                $program.init();
+                subtitle += `&nbsp;&raquo; ${
+                    testRun.program_name
+                } (${
+                    testRun.env.ENVIRONMENTS.map(x => x.name).join(", ")
+                }) &raquo; ${
+                    new Date(testRun.created).toLocaleString()
+                }`
+                $testRun.init();
             } else {
                 const programs = await this.resources;
 

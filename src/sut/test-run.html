@@ -1,0 +1,252 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/input/text.html">
+<link rel="import" href="/src/sut/input/named-list.html">
+<link rel="import" href="/src/sut/input/document.html">
+
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="/bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="/bower_components/juicy-ace-editor/juicy-ace-editor.html">
+
+
+<template>
+    <style>
+    /*form {
+        margin: 10px;
+    }*/
+    .container {
+        display: flex;
+        flex-direction: row;
+        padding: 10px;
+    }
+    .menu {
+        min-width: 15%;
+    }
+    .content {
+        min-width: 85%;
+    }
+    #menu {
+        display: block;
+        margin: 10px 0 0 0;
+        border: 1px dotted #aaf;
+        padding: 10px;
+    }
+    #all {
+        display: none;
+    }
+    paper-button[raised] {
+        background: linear-gradient(145deg, #47f, #7bf);
+        color: #fff;
+    }
+    paper-button[raised]#stop {
+        background: linear-gradient(145deg, #f00, #f72);
+    }
+    </style>
+    <div class="container">
+        <div class="menu">
+            <paper-button id="stop" raised>Stop</paper-button>
+            <paper-button id="rerun" raised>Rerun</paper-button>
+            <iron-selector id="menu" attr-for-selected="name"
+                role="navigation">
+                <paper-item name="summary">Summary</paper-item>
+                <paper-item name="configuration">Configuration</paper-item>
+                <paper-item name="checkpoints">Checkpoints</paper-item>
+                <paper-item name="logs">Logs</paper-item>
+            </iron-selector>
+        </div>
+        <div class="content">
+            <iron-pages id="pages" attr-for-selected="name" role="navigation">
+                <div name="summary">
+                    <juicy-ace-editor theme="ace/theme/chrome"
+                        id="summary" readonly>
+                    </juicy-ace-editor>
+                </div>
+                <div name="configuration">
+                    <juicy-ace-editor theme="ace/theme/chrome" mode="ace/mode/json"
+                        id="configuration">
+                    </juicy-ace-editor>
+                </div>
+                <div name="checkpoints">
+                    <juicy-ace-editor theme="ace/theme/chrome" mode="ace/mode/json"
+                        id="checkpoints">
+                    </juicy-ace-editor>
+                </div>
+                <div name="logs">Hello logs</div>
+            </iron-pages>
+            <div id="all"></div>
+        </div>
+    </div>
+</template>
+
+<script>
+(() => {
+
+    class TestRun extends Nclk.Hoquet(HTMLElement) {
+
+        constructor(testRun) {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $pages: {
+                    value: this.shadowRoot.getElementById("pages")
+                },
+                $allPage: {
+                    value: this.shadowRoot.getElementById("all")
+                },
+                $menu: {
+                    value: this.shadowRoot.getElementById("menu")
+                },
+                $rerunButton: {
+                    value: this.shadowRoot.getElementById("rerun")
+                },
+                $stopButton: {
+                    value: this.shadowRoot.getElementById("stop")
+                },
+                $configuration: {
+                    value: this.shadowRoot.getElementById("configuration")
+                },
+                $summary: {
+                    value: this.shadowRoot.getElementById("summary")
+                },
+                $checkpoints: {
+                    value: this.shadowRoot.getElementById("checkpoints")
+                }
+            });
+
+            this.bind();
+
+            if (testRun) this.testRun = testRun;
+        }
+
+        get testRun() { return this._testRun }
+        set testRun(testRun) {
+            Object.defineProperty(this, "_testRun", {
+                value: testRun
+            });
+        }
+
+        relatedResources(name) {
+            return new Promise((resolve, reject) => {
+                const req = new Request(
+                    this.testRun["related-resources"][name]
+                );
+                fetch(req, {method: "GET"}).then(resp => {
+                    if (!resp.ok)
+                        reject(resp)
+                    else {
+                        resp.json().then(data => {
+                            resolve(data);
+                        });
+                    }
+                });
+            });
+        }
+
+        async initSummary() {
+            const harvests = await this.relatedResources("harvests");
+            this.$summary.value = "";
+            harvests.results[0].data.forEach(r => {
+                this.$summary.value += "\n" + r.title + "\n";
+                r.fields.forEach(f => {
+                    this.$summary.value += f.title + "\n";
+                    this.$summary.value += f.value + "\n\n";
+                });
+                this.$summary.value += "\n\n\n";
+            });
+        }
+
+        async initCheckpoints() {
+            const checkpoints = await this.relatedResources("checkpoints");
+            console.log("cps", checkpoints);
+        }
+
+        async init() {
+            const tr = this.testRun;
+
+            console.log(tr);
+            this.initSummary();
+            this.initCheckpoints();
+            
+            this.$configuration.setAttribute("readonly", true);
+            this.$configuration.value = JSON.stringify(tr.env, false, 4);
+            this.$configuration.focus();
+
+            if (tr.status === "running")
+                this.$menu.select("checkpoints");
+            else
+                this.$menu.select("summary");
+        }
+
+        runTest() {
+            const body = {
+                program_name: this.program.name,
+                harvest_keys: [ "$bot" ],
+                env: [
+                    this.inputs.map(x => x.value).reduce(
+                        (p, c) => Object.assign(p, c)
+                    )
+                ]
+            };
+            const req = new Request(
+                this.apiBase + "/actions/run"
+            );
+            fetch(req, {
+                method: "POST",
+                headers: new Headers({
+                    "Content-Type": "application/json"
+                }),
+                body: JSON.stringify(body)
+            }).then(resp => {
+                if (!resp.ok) {
+                    throw `Failed to create test run. Status was ${resp.status}`
+                } else {
+                    resp.json().then(data => {
+                        window.history.pushState(
+                            {}, null, "/test-runs"); ///" + data.test_run_id);
+                        window.dispatchEvent(new CustomEvent('location-changed'));
+                    });
+                }
+            });
+        }
+
+        editorReady(editor) {
+            editor.setOptions({
+                maxLines: Infinity
+            });
+        }
+
+        bind() {
+            this.$rerunButton.addEventListener("click", _ => {}); //this.runTest());
+            this.$stopButton.addEventListener("click", _ => {}); //this.runTest());
+
+            this.$menu.addEventListener(
+                "selected-item-changed",
+                e => e.target.selectedItem && e.target.selectedItem.focus()
+            );
+            this.$menu.addEventListener(
+                "selected-changed",
+                e => this.$pages.select(e.target.selected)
+            );
+
+            ["$configuration", "$summary", "$checkpoints"].forEach(x =>
+                this[x].addEventListener(
+                    "editor-ready",
+                    e => this.editorReady(e.target.container.env.editor)
+                )
+            );
+        }
+    }
+
+    window.Sut.TestRun = TestRun;
+    window.customElements.define("sut-test-run", TestRun);
+
+    function cpDisplayName(cp) {
+        return cp && cp.meta && cp.meta.name || cp.name;
+    }
+    function cpType(cp) {
+        return cp.meta && cp.meta.widget && cp.meta.widget.type;
+    }
+
+})()
+</script>
