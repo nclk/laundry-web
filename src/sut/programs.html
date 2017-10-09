@@ -60,6 +60,10 @@
             );
         }
 
+        set testRun(tr) {
+            this.init(tr);
+        }
+
         get configProfilesHref() { return this._cphref }
         set configProfilesHref(href) {
             Object.defineProperty(this, "_cphref", {
@@ -73,7 +77,7 @@
             r.modules = this.harvest(r.data, "module");
         }
 
-        async init() {
+        async init(testRun = null) {
             let subtitle = "Programs";
             if (this.$route.active) {
                 const $program = new Sut.Program(
@@ -83,7 +87,7 @@
                 this.$detail.appendChild($program);
                 this.$pages.select("detail");
                 subtitle += `&nbsp;&raquo; ${(await this.selectedResource).name}`
-                $program.init();
+                $program.init(testRun);
             } else {
                 const programs = await this.resources;
 

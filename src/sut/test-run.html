@@ -166,7 +166,9 @@
         }
 
         async initLogs() {
-            const logs = await this.relatedResources("log-entries");
+            const logs = await this.relatedResources(
+                "log-entries", "&order=created&direction=asc"
+            );
             logs.results.forEach(log => {
                 let level = log.level.toUpperCase();
                 let len = level.length;
@@ -180,7 +182,6 @@
         async init() {
             const tr = this.testRun;
 
-            console.log(tr);
             this.initSummary();
             this.initCheckpoints();
             this.initLogs();
@@ -233,8 +234,20 @@
             });
         }
 
+        rerunTest() {
+            window.history.pushState({}, null, "/programs/" + this.testRun.program_name);
+            window.dispatchEvent(new CustomEvent("location-changed"));
+            this.dispatchEvent(new CustomEvent("retest", {
+                detail: {
+                    testRun: this.testRun
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
+
         bind() {
-            this.$rerunButton.addEventListener("click", _ => {}); //this.runTest());
+            this.$rerunButton.addEventListener("click", _ => this.rerunTest());
             this.$stopButton.addEventListener("click", _ => {}); //this.runTest());
 
             this.$menu.addEventListener(

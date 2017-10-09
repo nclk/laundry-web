@@ -154,6 +154,11 @@
             this.addEventListener("subtitle-change", (e => {
                 this.$subtitle.innerHTML = ":&nbsp;" + e.detail.subtitle;
             }).bind(this));
+
+            this.addEventListener("retest", (e => {
+                console.log(e.detail);
+                this.$programs.testRun = e.detail.testRun;
+            }).bind(this));
         }
 
         fetchResourceTypes(apiBase) {

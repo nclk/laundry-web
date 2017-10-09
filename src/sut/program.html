@@ -40,26 +40,31 @@
     }
     #aliases {
         display: none;
-        margin: 10px 0;
-        padding: 10px 10px 10px 25px;
-    }
-    #aliases h1 {
-        font-size: 1em;
-        margin: 0 0 7px 0;
-    }
-    #aliases ul {
-        list-style: none outside none;
-        margin: 0;
-        padding: 0;
-        background: #eee;
     }
     #aliases ul a {
         /*text-decoration: none;*/
         color: #47f;
         color: #f33;
     }
-    #aliases ul a:hover {
-        text-decoration: underline;
+    .submenu {
+        margin: 10px 0;
+        padding: 10px 10px 10px 25px;
+    }
+    .submenu h1 {
+        font-size: 1em;
+        margin: 0 0 7px 0;
+    }
+    .submenu ul {
+        list-style: none outside none;
+        margin: 0;
+        padding: 0;
+        background: #eee;
+    }
+    .submenu ul a.failure {
+        color: #f00;
+    }
+    .submenu ul a.success {
+        color: #0a0;
     }
 
     </style>
@@ -69,8 +74,12 @@
             <iron-selector id="config-profile-menu" attr-for-selected="name"
                 role="navigation">
             </iron-selector>
-            <div id="aliases">
+            <div id="aliases" class="submenu">
                 <h1>Includes:</h1>
+                <ul></ul>
+            </div>
+            <div id="last-runs" class="submenu">
+                <h1></h1>
                 <ul></ul>
             </div>
         </div>
@@ -120,12 +129,13 @@
                 },
                 $aliases: {
                     value: this.shadowRoot.getElementById("aliases")
+                },
+                $lastRuns: {
+                    value: this.shadowRoot.getElementById("last-runs")
                 }
             });
 
             this.bind();
-
-            console.log(configProfilesHref);
 
             if (configProfilesHref) this.configProfilesHref = configProfilesHref;
             if (program) this.program = program;
@@ -200,10 +210,65 @@
             });
         }
 
-        async init() {
+        get lastRunCount() {
+            return this._lastRunCount || 5;
+        }
+        set lastRunCount(count) {
+            Object.defineProperty(this, "_lastRunCount", {
+                value: count,
+                writable: true
+            });
+        }
+
+        get lastRuns() {
+            return new Promise((resolve, reject) => {
+                const req = new Request(
+                    `${
+                        this.program["related-resources"]["test-runs"]
+                    }&per-page=${
+                        this.lastRunCount
+                    }&order=created&direction=desc`
+                );
+                fetch(req, {method: "GET"}).then(resp => {
+                    if (!resp.ok)
+                        reject(resp)
+                    else {
+                        resp.json().then(data => {
+                            resolve(data);
+                        });
+                    }
+                });
+            });
+        }
+
+        async initLastRuns() {
+            const lastRuns = await this.lastRuns;
+            lastRuns.results && (this.$lastRuns.querySelector("h1").innerHTML = `Last ${
+                lastRuns.results.length > 1 ? lastRuns.results.length : ""
+            } run${lastRuns.results.length > 1 ? "s" : ""}`);
+            lastRuns.results.forEach(r => {
+                const $anchor = document.createElement("a");
+                const $li = document.createElement("li");
+                $anchor.innerHTML = `${
+                    new Date(r.created).toLocaleString()
+                } &raquo; ${
+                    r.program_name
+                } (${
+                    r.env.ENVIRONMENTS.map(x => x.name).join(", ")
+                })`;
+                $anchor.setAttribute("class", r.num_failures ? "failure" : "success");
+                $anchor.setAttribute("href", `/test-runs/${r.id}`);
+                $li.appendChild($anchor);
+                this.$lastRuns.querySelector("ul").appendChild($li);
+            });
+        }
+
+        async init(testRun = null) {
             const prog = this.program;
             const configProfiles = (await this.configProfiles).results;
             const $allSelector = document.createElement("paper-item");
+
+            this.initLastRuns();
 
             $allSelector.innerHTML = "SHOW ALL";
             $allSelector.setAttribute("name", "all");
@@ -212,7 +277,6 @@
 
             this.resolutions();
 
-            window.inputs = [];
             configProfiles.map(cp => {
                 let $input;
                 let $menuItem = document.createElement("paper-item");
