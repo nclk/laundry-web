@@ -1,4 +1,5 @@
 <link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/lib/nclk/format.html">
 <link rel="import" href="/src/sut/master-detail.html">
 <link rel="import" href="/src/sut/test-run-list-item.html">
 <link rel="import" href="/src/sut/test-run.html">
@@ -74,18 +75,18 @@
                 subtitle += `&nbsp;&raquo; ${
                     testRun.program_name
                 } (${
-                    testRun.env.ENVIRONMENTS.map(x => x.name).join(", ")
+                    Format.testRunLabel(testRun)
                 }) &raquo; ${
                     new Date(testRun.created).toLocaleString()
                 }`
                 $testRun.init();
             } else {
-                const programs = await this.resources;
+                const testRuns = await this.resources;
 
                 while (this.$list.firstChild)
                     this.$list.removeChild(this.$list.firstChild);
 
-                programs.results.forEach(p => {
+                testRuns.results.forEach(p => {
                     this.appendTestRun(p);
                 });
 
@@ -99,10 +100,10 @@
             }));
         }
 
-        appendTestRun(program) {
+        appendTestRun(testRun) {
             const $li = document.createElement("li");
-            const $program = new Sut.TestRunListItem(program);
-            $li.appendChild($program);
+            const $testRun = new Sut.TestRunListItem(testRun);
+            $li.appendChild($testRun);
             this.$list.appendChild($li);
         }
     }

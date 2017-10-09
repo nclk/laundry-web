@@ -2,6 +2,7 @@
 <link rel="import" href="/src/sut/input/text.html">
 <link rel="import" href="/src/sut/input/named-list.html">
 <link rel="import" href="/src/sut/input/document.html">
+<link rel="import" href="/src/sut/test-run-list-item.html">
 
 <link rel="import" href="/bower_components/paper-button/paper-button.html">
 <link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">
@@ -66,7 +67,9 @@
     .submenu ul a.success {
         color: #0a0;
     }
-
+    #last-runs sut-test-run-list-item {
+        margin-left: -25px;
+    }
     </style>
     <div class="container">
         <div class="menu">
@@ -247,18 +250,11 @@
                 lastRuns.results.length > 1 ? lastRuns.results.length : ""
             } run${lastRuns.results.length > 1 ? "s" : ""}`);
             lastRuns.results.forEach(r => {
-                const $anchor = document.createElement("a");
                 const $li = document.createElement("li");
-                $anchor.innerHTML = `${
-                    new Date(r.created).toLocaleString()
-                } &raquo; ${
-                    r.program_name
-                } (${
-                    r.env.ENVIRONMENTS.map(x => x.name).join(", ")
-                })`;
-                $anchor.setAttribute("class", r.num_failures ? "failure" : "success");
-                $anchor.setAttribute("href", `/test-runs/${r.id}`);
-                $li.appendChild($anchor);
+                const $trli = new Sut.TestRunListItem(r);
+                $trli.style.width = "auto";
+                $li.appendChild($trli);
+                //$li.appendChild($anchor);
                 this.$lastRuns.querySelector("ul").appendChild($li);
             });
         }
@@ -327,7 +323,8 @@
                 this.apiBase + "/actions/run"
             );
             fetch(req, {
-                method: "POST", credentials: "same-origin",
+                method: "POST",
+                credentials: "same-origin",
                 headers: new Headers({
                     "Content-Type": "application/json"
                 }),

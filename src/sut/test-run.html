@@ -210,7 +210,8 @@
                 this.apiBase + "/actions/run"
             );
             fetch(req, {
-                method: "POST", credentials: "same-origin",
+                method: "POST",
+                credentials: "same-origin",
                 headers: new Headers({
                     "Content-Type": "application/json"
                 }),

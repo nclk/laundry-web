@@ -17,6 +17,11 @@
                 seconds && " seconds"
             ].filter(x => x).join("");
         }
+
+        static testRunLabel(tr) {
+            return tr && tr.env && tr.env.ENVIRONMENTS &&
+                tr.env.ENVIRONMENTS.map(x => x.name).join(", ");
+        }
     }
 
     //Not needed because this is just a class full of static functions.

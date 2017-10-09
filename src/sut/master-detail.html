@@ -88,7 +88,8 @@
                     }`);
 
                     fetch(req, {
-                        method: "GET", credentials: "same-origin"
+                        method: "GET",
+                        credentials: "same-origin"
                     }).then((resp) => {
                         if (!resp.ok) {
                             reject(resp);

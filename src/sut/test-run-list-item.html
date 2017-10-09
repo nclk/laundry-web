@@ -206,7 +206,7 @@
                         , ` (${
                                 // TODO: this exact thing is also used in test-runs.html
                                 // make it DRY
-                                this.testRun.env.ENVIRONMENTS.map(x => x.name).join(", ")
+                                Format.testRunLabel(this.testRun)
                             })`
                         ]
 
