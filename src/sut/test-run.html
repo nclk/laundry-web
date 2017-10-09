@@ -58,21 +58,21 @@
         <div class="content">
             <iron-pages id="pages" attr-for-selected="name" role="navigation">
                 <div name="summary">
-                    <juicy-ace-editor theme="ace/theme/chrome"
-                        id="summary" readonly>
-                    </juicy-ace-editor>
+                    <juicy-ace-editor theme="ace/theme/chrome" wrapmode
+                        id="summary" readonly></juicy-ace-editor>
                 </div>
                 <div name="configuration">
                     <juicy-ace-editor theme="ace/theme/chrome" mode="ace/mode/json"
-                        id="configuration">
-                    </juicy-ace-editor>
+                        id="configuration"></juicy-ace-editor>
                 </div>
                 <div name="checkpoints">
-                    <juicy-ace-editor theme="ace/theme/chrome" mode="ace/mode/json"
-                        id="checkpoints">
-                    </juicy-ace-editor>
+                    <juicy-ace-editor theme="ace/theme/chrome"
+                        wrapmode id="checkpoints"></juicy-ace-editor>
                 </div>
-                <div name="logs">Hello logs</div>
+                <div name="logs">
+                    <juicy-ace-editor theme="ace/theme/chrome"
+                        wrapmode id="logs"></juicy-ace-editor>
+                </div>
             </iron-pages>
             <div id="all"></div>
         </div>
@@ -111,6 +111,9 @@
                 },
                 $checkpoints: {
                     value: this.shadowRoot.getElementById("checkpoints")
+                },
+                $logs: {
+                    value: this.shadowRoot.getElementById("logs")
                 }
             });
 
@@ -126,10 +129,10 @@
             });
         }
 
-        relatedResources(name) {
+        relatedResources(name, extra = "") {
             return new Promise((resolve, reject) => {
                 const req = new Request(
-                    this.testRun["related-resources"][name]
+                    `${this.testRun["related-resources"][name]}${extra}`
                 );
                 fetch(req, {method: "GET"}).then(resp => {
                     if (!resp.ok)
@@ -145,9 +148,8 @@
 
         async initSummary() {
             const harvests = await this.relatedResources("harvests");
-            this.$summary.value = "";
-            harvests.results[0].data.forEach(r => {
-                this.$summary.value += "\n" + r.title + "\n";
+            harvests.results && harvests.results[0].data.forEach(r => {
+                this.$summary.value += "\n" + r.title.toUpperCase() + "\n";
                 r.fields.forEach(f => {
                     this.$summary.value += f.title + "\n";
                     this.$summary.value += f.value + "\n\n";
@@ -157,8 +159,22 @@
         }
 
         async initCheckpoints() {
-            const checkpoints = await this.relatedResources("checkpoints");
-            console.log("cps", checkpoints);
+            const checkpoints = await this.relatedResources(
+                "checkpoints", "&per-page=10"
+            );
+            this.$checkpoints.value += JSON.stringify(checkpoints.results, false, 4);
+        }
+
+        async initLogs() {
+            const logs = await this.relatedResources("log-entries");
+            logs.results.forEach(log => {
+                let level = log.level.toUpperCase();
+                let len = level.length;
+                while (len++ < 5)
+                    level += " ";
+                this.$logs.value += level + ": ";
+                this.$logs.value += log.message + "\n";
+            });
         }
 
         async init() {
@@ -167,13 +183,14 @@
             console.log(tr);
             this.initSummary();
             this.initCheckpoints();
+            this.initLogs();
             
             this.$configuration.setAttribute("readonly", true);
             this.$configuration.value = JSON.stringify(tr.env, false, 4);
             this.$configuration.focus();
 
             if (tr.status === "running")
-                this.$menu.select("checkpoints");
+                this.$menu.select("logs");
             else
                 this.$menu.select("summary");
         }
@@ -229,7 +246,7 @@
                 e => this.$pages.select(e.target.selected)
             );
 
-            ["$configuration", "$summary", "$checkpoints"].forEach(x =>
+            ["$configuration", "$summary", "$checkpoints", "$logs"].forEach(x =>
                 this[x].addEventListener(
                     "editor-ready",
                     e => this.editorReady(e.target.container.env.editor)
