@@ -160,7 +160,7 @@
                 const req = new Request(
                     this.program["related-resources"]["config-profile-program-maps"]
                 );
-                fetch(req, {method: "GET"}).then(resp => {
+                fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
                     if (!resp.ok) { reject(resp) }
                     else {
                         resp.json().then(data => {
@@ -183,7 +183,7 @@
                             maps.results.map(x=>x.config_profile).join(`&name=`)
                         }&order=name`
                     );
-                    fetch(req, {method: "GET"}).then(resp => {
+                    fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
                         if (!resp.ok) reject(resp);
                         else {
                             resp.json().then(data => {
@@ -229,7 +229,7 @@
                         this.lastRunCount
                     }&order=created&direction=desc`
                 );
-                fetch(req, {method: "GET"}).then(resp => {
+                fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
                     if (!resp.ok)
                         reject(resp)
                     else {
@@ -327,7 +327,7 @@
                 this.apiBase + "/actions/run"
             );
             fetch(req, {
-                method: "POST",
+                method: "POST", credentials: "same-origin",
                 headers: new Headers({
                     "Content-Type": "application/json"
                 }),

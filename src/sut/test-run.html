@@ -134,7 +134,7 @@
                 const req = new Request(
                     `${this.testRun["related-resources"][name]}${extra}`
                 );
-                fetch(req, {method: "GET"}).then(resp => {
+                fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
                     if (!resp.ok)
                         reject(resp)
                     else {
@@ -210,7 +210,7 @@
                 this.apiBase + "/actions/run"
             );
             fetch(req, {
-                method: "POST",
+                method: "POST", credentials: "same-origin",
                 headers: new Headers({
                     "Content-Type": "application/json"
                 }),

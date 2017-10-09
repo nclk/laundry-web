@@ -108,7 +108,7 @@
 
         poll() {
             const req = new Request(this.testRun.href);
-            fetch(req, {method: "GET"}).then(resp => {
+            fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
                 if (!resp.ok) {
                     throw resp;
                 } else {
