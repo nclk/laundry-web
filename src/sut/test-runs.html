@@ -50,7 +50,8 @@
 
             this.containers = [this.$list, this.$detail];
 
-            this.$route.pattern = "/:id";
+            this.routeKey = "id";
+            this.$route.pattern = `/:${this.routeKey}`;
             this.order = "created";
             this.direction = "desc";
             this.idPredicate = x => (

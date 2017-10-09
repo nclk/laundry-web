@@ -107,13 +107,40 @@
             });
         }
 
+        get newSelectedResource() {
+            return new Promise((resolve, reject) => {
+                const req = new Request(`${
+                    this.api.href
+                }/${
+                    this.$route.data[this.routeKey]
+                }`);
+
+                fetch(req, {
+                    method: "GET",
+                    credentials: "same-origin"
+                }).then((resp) => {
+                    if (!resp.ok) {
+                        reject(resp);
+                    } else {
+                        resp.json().then(data => {
+                            resolve(
+                                this.resourceReceivedPipeline(data)
+                            );
+                        });
+                    }
+                });
+            });
+        }
+
         async _getSelectedResource() {
             const resources = await this.resources;
             const candidates =
                 resources.results.filter(
                     x => this.idPredicate(x)
                 );
-            return candidates.length && candidates[0];
+            return candidates.length
+                ? candidates[0]
+                : await this.newSelectedResource();
         }
 
         get selectedResource() {

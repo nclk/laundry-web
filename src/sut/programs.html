@@ -53,7 +53,8 @@
             this.$pages.appendChild(this.$detail);
             this.$pages.attrForSelected = "name";
 
-            this.$route.pattern = "/:name";
+            this.routeKey = "name";
+            this.$route.pattern = `/:${this.routeKey}`;
             this.order = "name";
             this.idPredicate = x => (
                 x["name"] === this.$route.data["name"]
