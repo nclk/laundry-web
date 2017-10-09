@@ -12,7 +12,7 @@ RUN apt-get install -y -t jessie-backports certbot
 
 ADD ./nginx.conf.template /etc/nginx/nginx.conf.template
 ADD ./bin/init /usr/bin/init-sutweb
-RUN npm i -g polymer-cli bower
+RUN npm i -g bower
 RUN bower install --allow-root -F
 
 #CMD [ "bash", "/usr/bin/init-sutweb" ]
