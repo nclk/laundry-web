@@ -67,10 +67,13 @@
             this.resultSet = {};
 
             if (this.$route.active) {
-                const $testRun = new Sut.TestRun(await this.selectedResource);
+                const $testRun = new Sut.TestRun(
+                    await this.selectedResource, this.apiBase
+                );
                 const testRun = await this.selectedResource;
                 this.$detail.firstChild && this.$detail.removeChild(
-                    this.$detail.firstChild);
+                    this.$detail.firstChild
+                );
                 this.$detail.appendChild($testRun);
                 this.$pages.select("detail");
                 subtitle += `&nbsp;&raquo; ${
@@ -79,7 +82,12 @@
                     Format.testRunLabel(testRun)
                 }) &raquo; ${
                     new Date(testRun.created).toLocaleString()
-                }`
+                } &mdash; ${(testRun.status === "complete"
+                        ? testRun.num_failures > 0
+                            ? "failed"
+                            : "success"
+                        : testRun.status
+                ).toUpperCase()}`
                 $testRun.init();
             } else {
                 const testRuns = await this.resources;

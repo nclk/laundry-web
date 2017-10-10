@@ -187,7 +187,7 @@
                 const api = await this.fetchResourceTypes(newValue);
                 this.$programs.api = api.Programs;
                 this.$programs.configProfilesHref = api["Config Profiles"].href;
-                this.$programs.apiBase = newValue;
+                this.$programs.apiBase = this.$testRuns.apiBase = newValue;
                 this.$testRuns.api = api["Test Runs"];
                 this.init();
                 break;
