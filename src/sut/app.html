@@ -171,9 +171,9 @@
             });
 
             this.addEventListener("response", _ => {
-                if (!--requests) {
-                    this.$spinner.style.visibility = "hidden";
-                }
+                //if (!--requests) {
+                this.$spinner.style.visibility = "hidden";
+                //}
             });
         }
 
