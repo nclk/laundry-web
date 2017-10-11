@@ -32,13 +32,7 @@
 <script>
 (() => {
     
-    const _import = window.Sut._resolveImport("src/sut/input/named-list.html");
-
     class NamedListInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
-
-        static get import() {
-            return _import;
-        }
 
         constructor(configProfile) {
             super();

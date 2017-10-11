@@ -52,13 +52,7 @@
 <script>
 (() => {
 
-    const _import = window.Sut._resolveImport("src/sut/program-list-item.html");
-
     class ProgramListItem extends Nclk.Hoquet(HTMLElement) {
-
-        static get import() {
-            return _import;
-        }
 
         constructor(program) {
             super();

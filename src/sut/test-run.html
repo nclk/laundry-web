@@ -145,15 +145,9 @@
                 const req = new Request(
                     `${this.testRun["related-resources"][name]}${extra}`
                 );
-                fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
-                    if (!resp.ok)
-                        reject(resp)
-                    else {
-                        resp.json().then(data => {
-                            resolve(data);
-                        });
-                    }
-                });
+                Utils.fetch(this, req, {
+                    method: "GET", credentials: "same-origin"
+                }, reject, resolve);
             });
         }
 
@@ -240,30 +234,24 @@
             const req = new Request(
                 this.testRun.href
             );
-            fetch(req, {
-                method: "GET",
-                credentials: "same-origin"
-            }).then(resp => {
-                if (!resp.ok) {
-                    this.$stopButton.innerHTML = `error ${resp.statusCode}`;
-                } else {
-                    resp.json().then(data => {
-                        this.$stopButton.innerHTML = data.status;
-                        if (data.status === "running") {
-                            this.pollInterrupted();
-                        }
-                    });
+            Utils.fetch(this, req, {
+                method: "GET", credentials: "same-origin"
+            }, resp => {
+                this.$stopButton.innerHTML = `error (${resp.statusCode})`;
+            }, data => {
+                this.$stopButton.innerHTML = data.status;
+                if (data.status === "running") {
+                    this.pollInterrupted();
                 }
             });
         }
 
         stopTest() {
 
-            console.log(this.testRun, this.apiBase);
             const req = new Request(
                 this.apiBase + "/actions/signal"
             );
-            fetch(req, {
+            Utils.fetch(this, req, {
                 method: "POST",
                 credentials: "same-origin",
                 headers: new Headers({
@@ -273,16 +261,11 @@
                     "message": "interrupt",
                     "testrun-id": this.testRun.id
                 })
-            }).then(resp => {
-                if (!resp.ok) {
-                    throw `Failed to create test run. Status was ${resp.status}`
-                } else {
-                    this.disableStopButton();
-                    this.pollInterrupted();
-                    //window.history.pushState(
-                    //    {}, null, "/test-runs");
-                    //window.dispatchEvent(new CustomEvent('location-changed'));
-                }
+            }, resp => {
+                throw `Failed to create test run. Status was ${resp.status}`
+            }, _ => {
+                this.disableStopButton();
+                this.pollInterrupted();
             });
 
         }

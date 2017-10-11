@@ -163,14 +163,10 @@
                 const req = new Request(
                     this.program["related-resources"]["config-profile-program-maps"]
                 );
-                fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
-                    if (!resp.ok) { reject(resp) }
-                    else {
-                        resp.json().then(data => {
-                            resolve(data);
-                        });
-                    }
-                });
+                Utils.fetch(this, req, {
+                    method: "GET", credentials: "same-origin"
+                }, reject, resolve);
+
             });
         }
 
@@ -186,16 +182,13 @@
                             maps.results.map(x=>x.config_profile).join(`&name=`)
                         }&order=name`
                     );
-                    fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
-                        if (!resp.ok) reject(resp);
-                        else {
-                            resp.json().then(data => {
-                                Object.defineProperty(this, "_configProfiles", {
-                                    value: data
-                                });
-                                resolve(this._configProfiles);
-                            });
-                        }
+                    Utils.fetch(this, req, {
+                        method: "GET", credentials: "same-origin"
+                    }, reject, data => {
+                        Object.defineProperty(this, "_configProfiles", {
+                            value: data
+                        });
+                        resolve(this._configProfiles);
                     });
                 }
             });
@@ -232,15 +225,10 @@
                         this.lastRunCount
                     }&order=created&direction=desc`
                 );
-                fetch(req, {method: "GET", credentials: "same-origin"}).then(resp => {
-                    if (!resp.ok)
-                        reject(resp)
-                    else {
-                        resp.json().then(data => {
-                            resolve(data);
-                        });
-                    }
-                });
+                Utils.fetch(this, req, {
+                    method: "GET", credentials: "same-origin"
+                }, reject, resolve);
+
             });
         }
 
@@ -322,23 +310,19 @@
             const req = new Request(
                 this.apiBase + "/actions/run"
             );
-            fetch(req, {
+            Utils.fetch(this, req, {
                 method: "POST",
                 credentials: "same-origin",
                 headers: new Headers({
                     "Content-Type": "application/json"
                 }),
                 body: JSON.stringify(body)
-            }).then(resp => {
-                if (!resp.ok) {
-                    throw `Failed to create test run. Status was ${resp.status}`
-                } else {
-                    resp.json().then(data => {
-                        window.history.pushState(
-                            {}, null, "/test-runs"); ///" + data.test_run_id);
-                        window.dispatchEvent(new CustomEvent('location-changed'));
-                    });
-                }
+            }, resp => {
+                throw resp;
+            }, _ => {
+                window.history.pushState(
+                    {}, null, "/test-runs");
+                window.dispatchEvent(new CustomEvent('location-changed'));
             });
         }
 

@@ -20,6 +20,7 @@
 <link rel="import" href="/bower_components/app-route/app-route.html">
 <link rel="import" href="/bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="/bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="/bower_components/paper-spinner/paper-spinner-lite.html">
 
 <template>
     <style>
@@ -44,6 +45,19 @@
     }
     a.iron-selected paper-item {
         font-weight: bold;
+    }
+    #spinner {
+        margin-left: 10px;
+        height: 20px;
+        float: right;
+        visibility: hidden;
+    }
+    paper-spinner-lite {
+        width: 25px;
+        height: 25px;
+        position: absolute;
+        --paper-spinner-stroke-width: 2px;
+        --paper-spinner-color: #fa5;
     }
     </style>
 
@@ -76,6 +90,9 @@
                     <paper-icon-button icon="menu" drawer-toggle></paper-icon-button>
                     <header>
                         <span main-title>SUT</span><span id="subtitle"></span>
+                        <span id="spinner">
+                            <paper-spinner-lite active></paper-spinner-lite>
+                        </span>
                     </header>
                     <!--<a href="/add-new">
                         <paper-icon-button icon="add"></paper-icon-button>
@@ -100,17 +117,12 @@
 <script>
 (() => {
 
-    const _import = window.Sut._resolveImport("src/sut/app.html");
-
     class App extends Nclk.Hoquet(HTMLElement) {
+
         static get observedAttributes() {
             return [
                 "sut-api-base", "default-resource-type"
             ];
-        }
-
-        static get import() {
-            return _import;
         }
 
         constructor() {
@@ -142,8 +154,30 @@
                 },
                 $testRuns: {
                     value: this.shadowRoot.getElementById("test-runs")
+                },
+                $spinner: {
+                    value: this.shadowRoot.getElementById("spinner")
                 }
             });
+
+            this.bind();
+        }
+
+        bindProgressIndication() {
+            let requests = 0;
+            this.addEventListener("request", _ => {
+                requests = ++requests > 0 ? requests : 1;
+                this.$spinner.style.visibility = "visible";
+            });
+
+            this.addEventListener("response", _ => {
+                if (!--requests) {
+                    this.$spinner.style.visibility = "hidden";
+                }
+            });
+        }
+
+        bind() {
 
             this.$route.route = this.$location.route;
             this.$location.addEventListener("route-changed", (_ => {
@@ -159,23 +193,16 @@
                 console.log(e.detail);
                 this.$programs.testRun = e.detail.testRun;
             }).bind(this));
+
+            this.bindProgressIndication();
         }
 
         fetchResourceTypes(apiBase) {
             return new Promise((resolve, reject) => {
                 const req = new Request(apiBase);
-                fetch(req, {
-                    method: "GET",
-                    credentials: "same-origin"
-                }).then((resp) => {
-                    if (!resp.ok) {
-                        reject(resp);
-                    } else {
-                        resp.json().then((data) => {
-                            resolve(data);
-                        });
-                    }
-                });
+                Utils.fetch(this, req, {
+                    method: "GET", credentials: "same-origin"
+                }, reject, resolve);
             });
         }
 
@@ -194,11 +221,15 @@
             }
         }
 
+        initSubtitle() {
+            this.$subtitle.innerHTML = "";
+        }
+
         async init() {
             const page = this.$route.data.page;
             this.$mainMenu.selected = page;
 
-            this.$subtitle.innerHTML = "";
+            this.initSubtitle();
 
             switch (page) {
             case "programs":

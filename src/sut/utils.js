@@ -1,16 +1,4 @@
 (() => {
-    const _resolveImport = file => {
-        return (function recur(doc) {
-            const imports = doc.querySelectorAll(`link[rel="import"]`);
-            return Array.prototype.reduce.call(imports, function(p, c) {
-                return p || (
-                    ~c.href.indexOf(file)
-                        ? c.import
-                        : recur(c.import)
-                );
-            }, null);
-        })(window.document);
-    }
 
     const _getCookie = (name) => document.cookie.split(";")
         .map(
@@ -19,13 +7,37 @@
             (p, c) => c[0] === name ? c[1] : p, ""
         );
 
+    const _fetch = (el, req, options, reject, resolve) => {
+
+        el.dispatchEvent(new CustomEvent("request", {
+            composed: true,
+            bubbles: true
+        }));
+
+        fetch(req, options).then(resp => {
+            if (!resp.ok) {
+                el.dispatchEvent(new CustomEvent("response", {
+                    composed: true,
+                    bubbles: true
+                }));
+                reject(resp);
+            } else resp.json().then(data => {
+                el.dispatchEvent(new CustomEvent("response", {
+                    composed: true,
+                    bubbles: true
+                }));
+                resolve(data);
+            });
+        });
+    };
+
     window.Sut = window.Sut || Object.create(null);
+    window.Utils = Object.create(null);
 
-    Object.defineProperty(window.Sut, "_resolveImport", {
-        value: _resolveImport
-    });
-
-    Object.defineProperty(window.Sut, "_getCookie", {
+    Object.defineProperty(window.Utils, "_getCookie", {
         value: _getCookie
+    });
+    Object.defineProperty(window.Utils, "fetch", {
+        value: _fetch
     });
 })();

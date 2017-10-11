@@ -25,13 +25,7 @@
 <script>
 (() => {
     
-    const _import = window.Sut._resolveImport("src/sut/input/document.html");
-
     class DocumentInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
-
-        static get import() {
-            return _import;
-        }
 
         constructor(configProfile) {
             super();

@@ -87,21 +87,15 @@
                         this.direction || "asc"
                     }`);
 
-                    fetch(req, {
+                    Utils.fetch(this, req, {
                         method: "GET",
                         credentials: "same-origin"
-                    }).then((resp) => {
-                        if (!resp.ok) {
-                            reject(resp);
-                        } else {
-                            resp.json().then(data => {
-                                this.resultSet = data;
-                                this.resultSet.results.forEach(
-                                    x => this.resourceReceivedPipeline(x)
-                                );
-                                resolve(this.resultSet);
-                            });
-                        }
+                    }, reject, data => {
+                        this.resultSet = data;
+                        this.resultSet.results.forEach(
+                            x => this.resourceReceivedPipeline(x)
+                        );
+                        resolve(this.resultSet);
                     });
                 }
             });
@@ -115,18 +109,12 @@
                     this.$route.data[this.routeKey]
                 }`);
 
-                fetch(req, {
+                Utils.fetch(this, req, {
                     method: "GET",
                     credentials: "same-origin"
-                }).then((resp) => {
-                    if (!resp.ok) {
-                        reject(resp);
-                    } else {
-                        resp.json().then(data => {
-                            this.resourceReceivedPipeline(data)
-                            resolve(data);
-                        });
-                    }
+                }, reject, data => {
+                    this.resourceReceivedPipeline(data)
+                    resolve(data);
                 });
             });
         }
