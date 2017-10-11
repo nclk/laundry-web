@@ -80,15 +80,17 @@
 
         async init(testRun = null) {
             let subtitle = "Programs";
+
+            super.init();
             if (this.$route.active) {
                 const $program = new Sut.Program(
                     await this.selectedResource, this.configProfilesHref, this.apiBase);
                 this.$detail.firstChild && this.$detail.removeChild(
                     this.$detail.firstChild);
+                $program.init(testRun);
                 this.$detail.appendChild($program);
                 this.$pages.select("detail");
                 subtitle += `&nbsp;&raquo; ${(await this.selectedResource).name}`
-                $program.init(testRun);
             } else {
                 const programs = await this.resources;
 

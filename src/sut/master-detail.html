@@ -2,10 +2,20 @@
 <link rel="import" href="/bower_components/app-route/app-route.html">
 
 <template>
-    <app-route id="route" pattern="/:id"></app-route>
-    <iron-pages id="pages" attr-for-selected="name" fallback-selection="master" role="XXX">
-    </iron-pages>
 
+    <style>
+    #loading {
+        font-size: 1.5em;
+        padding: 20px;
+        
+    }
+    </style>
+
+    <app-route id="route" pattern="/:id"></app-route>
+    <iron-pages id="pages" attr-for-selected="name" fallback-selection="master"
+        role="XXX">
+        <div id="loading" name="loading">loading...</div>
+    </iron-pages>
 </template>
 
 <script>
@@ -30,8 +40,8 @@
             const [$master, $detail] = containers;
             $master.setAttribute("name", "master");
             $detail.setAttribute("name", "detail");
-            this.$pages.appendChild(this.$list);
-            this.$pages.appendChild(this.$detail);
+            this.$pages.appendChild($master);
+            this.$pages.appendChild($detail);
         }
 
         get api() { return this._api }
@@ -99,6 +109,10 @@
                     });
                 }
             });
+        }
+
+        init() {
+            this.$pages.select("loading");
         }
 
         get newSelectedResource() {
