@@ -1,0 +1,260 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/programs.html">
+<link rel="import" href="/src/sut/test-runs.html">
+
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html">
+<link rel="import"
+        href="/bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
+<link rel="import" href="/bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="/bower_components/app-layout/app-header/app-header.html">
+<link rel="import"
+        href="/bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="/bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import"
+        href="/bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="/bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="/bower_components/app-route/app-location.html">
+<link rel="import" href="/bower_components/app-route/app-route.html">
+<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="/bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="/bower_components/paper-spinner/paper-spinner-lite.html">
+
+<template>
+    <style>
+    app-header {
+      /*background: linear-gradient(45deg, #000,  #8cf);
+      background: linear-gradient(45deg, #333,  #666);*/
+      background: #333;
+      color: #fff;
+    }
+    paper-icon-button {
+      --paper-icon-button-ink-color: white;
+    }
+    app-drawer-layout:not([narrow]) [drawer-toggle] {
+        display: none;
+    }
+    a {
+        text-decoration: none;
+        color: inherit;
+        box-sizing: border-box;
+        height: 100%;
+        width: 100%;
+    }
+    a.iron-selected paper-item {
+        font-weight: bold;
+    }
+    #spinner {
+        margin-left: 10px;
+        height: 20px;
+        float: right;
+        visibility: hidden;
+    }
+    paper-spinner-lite {
+        width: 25px;
+        height: 25px;
+        position: absolute;
+        --paper-spinner-stroke-width: 2px;
+        --paper-spinner-color: #fa5;
+    }
+    </style>
+
+    <app-location id="location"></app-location>
+    <app-route id="route" pattern="/:page"></app-route>
+
+    <app-drawer-layout force-narrow>
+
+        <app-drawer id="drawer" slot="drawer">
+            <app-toolbar>Menu</app-toolbar>
+
+            <!-- menu content goes here -->
+
+            <iron-selector
+                    id="main-menu"
+                    attr-for-selected="name"
+                    role="navigation">
+                <a tabindex="-1" href="/programs" name="programs">
+                    <paper-item>Programs</paper-item>
+                </a>
+                <a tabindex="-1" href="/test-runs" name="test-runs">
+                    <paper-item>Test Runs</paper-item>
+                </a>
+            </iron-selector>
+        </app-drawer>
+
+        <app-header-layout>
+            <app-header slot="header" reveals effects="waterfall">
+                <app-toolbar>
+                    <paper-icon-button icon="menu" drawer-toggle></paper-icon-button>
+                    <header>
+                        <span main-title>SUT</span><span id="subtitle"></span>
+                        <span id="spinner">
+                            <paper-spinner-lite active></paper-spinner-lite>
+                        </span>
+                    </header>
+                    <!--<a href="/add-new">
+                        <paper-icon-button icon="add"></paper-icon-button>
+                    </a>-->
+                </app-toolbar>
+            </app-header>
+
+            <!-- content goes here -->
+            <iron-pages
+                    id="pages"
+                    attr-for-selected="name"
+                    fallback-selection="programs"
+                    role="XXX">
+                <sut-programs id="programs" name="programs"></sut-programs>
+                <sut-test-runs id="test-runs" name="test-runs"></sut-test-runs>
+            </iron-pages>
+        </app-header-layout>
+
+    </app-drawer-layout>
+</template>
+
+<script>
+(() => {
+
+    class App extends Nclk.Hoquet(HTMLElement) {
+
+        static get observedAttributes() {
+            return [
+                "sut-api-base", "default-resource-type"
+            ];
+        }
+
+        constructor() {
+            super();
+
+            this.render();
+
+            Object.defineProperties(this, {
+                $location: {
+                    value: this.shadowRoot.getElementById("location")
+                },
+                $route: {
+                    value: this.shadowRoot.getElementById("route")
+                },
+                $drawer: {
+                    value: this.shadowRoot.getElementById("drawer")
+                },
+                $pages: {
+                    value: this.shadowRoot.getElementById("pages")
+                },
+                $mainMenu: {
+                    value: this.shadowRoot.getElementById("main-menu")
+                },
+                $programs: {
+                    value: this.shadowRoot.getElementById("programs")
+                },
+                $subtitle: {
+                    value: this.shadowRoot.getElementById("subtitle")
+                },
+                $testRuns: {
+                    value: this.shadowRoot.getElementById("test-runs")
+                },
+                $spinner: {
+                    value: this.shadowRoot.getElementById("spinner")
+                }
+            });
+
+            this.bind();
+        }
+
+        bindProgressIndication() {
+            let requests = 0;
+            this.addEventListener("request", _ => {
+                requests = ++requests > 0 ? requests : 1;
+                this.$spinner.style.visibility = "visible";
+            });
+
+            this.addEventListener("response", _ => {
+                //if (!--requests) {
+                this.$spinner.style.visibility = "hidden";
+                //}
+            });
+        }
+
+        bind() {
+
+            this.$route.route = this.$location.route;
+            this.$location.addEventListener("route-changed", (_ => {
+                this.$route.route = this.$location.route;
+                this.init();
+            }).bind(this));
+
+            this.addEventListener("subtitle-change", (e => {
+                this.$subtitle.innerHTML = ":&nbsp;" + e.detail.subtitle;
+            }).bind(this));
+
+            this.addEventListener("retest", (e => {
+                console.log(e.detail);
+                this.$programs.testRun = e.detail.testRun;
+            }).bind(this));
+
+            this.bindProgressIndication();
+        }
+
+        fetchResourceTypes(apiBase) {
+            return new Promise((resolve, reject) => {
+                const req = new Request(apiBase);
+                Utils.fetch(this, req, {
+                    method: "GET", credentials: "same-origin"
+                }, reject, resolve);
+            });
+        }
+
+        async attributeChangedCallback(name, oldValue, newValue) {
+            switch (name) {
+            case "default-resource-type":
+                break;
+            case "sut-api-base":
+                const api = await this.fetchResourceTypes(newValue);
+                this.$programs.api = api.Programs;
+                this.$programs.configProfilesHref = api["Config Profiles"].href;
+                this.$programs.apiBase = this.$testRuns.apiBase = newValue;
+                this.$testRuns.api = api["Test Runs"];
+                this.init();
+                break;
+            }
+        }
+
+        initSubtitle() {
+            this.$subtitle.innerHTML = "";
+        }
+
+        async init() {
+            const page = this.$route.data.page;
+            this.$mainMenu.selected = page;
+
+            this.initSubtitle();
+
+            switch (page) {
+            case "programs":
+                this.$programs.route = this.$route.tail;
+                this.$pages.select("programs");
+                this.$programs.init();
+                break;
+            case "test-runs":
+                this.$testRuns.route = this.$route.tail;
+                this.$pages.select("test-runs");
+                this.$testRuns.init();
+                break;
+            default:
+                const drt = this.getAttribute("default-resource-type");
+                this.$pages.select(drt);
+                this.$location.path = `/${drt}`;
+                break;
+            }
+            this.$drawer.close();
+        }
+
+    }
+
+    window.Sut.App = App;
+    window.customElements.define("sut-app", App);
+
+})()
+</script>

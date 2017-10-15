@@ -1,0 +1,175 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/bower_components/app-route/app-route.html">
+
+<template>
+
+    <style>
+    #loading {
+        font-size: 1.5em;
+        padding: 20px;
+        
+    }
+    </style>
+
+    <app-route id="route" pattern="/:id"></app-route>
+    <iron-pages id="pages" attr-for-selected="name" fallback-selection="master"
+        role="XXX">
+        <div id="loading" name="loading">loading...</div>
+    </iron-pages>
+</template>
+
+<script>
+(() => {
+    class MasterDetail extends Nclk.Hoquet(HTMLElement) {
+
+        constructor() {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $pages: { value: this.shadowRoot.getElementById("pages") },
+                $route: { value: this.shadowRoot.getElementById("route") },
+                resultSet: { value: {}, writable: true }
+            });
+        }
+
+        set route(route) {
+            this.$route.route = route;
+        }
+
+        set containers(containers) {
+            const [$master, $detail] = containers;
+            $master.setAttribute("name", "master");
+            $detail.setAttribute("name", "detail");
+            this.$pages.appendChild($master);
+            this.$pages.appendChild($detail);
+        }
+
+        get api() { return this._api }
+        set api(api) {
+            Object.defineProperty(this, "_api", {
+                value: api
+            });
+        }
+
+        get apiBase() { return this._apiBase }
+        set apiBase(base) {
+            Object.defineProperty(this, "_apiBase", {
+                value: base
+            });
+        }
+
+        get order() { return this._order }
+        set order(order) {
+            Object.defineProperty(this, "_order", {
+                value: order
+            });
+        }
+
+        get direction() { return this._direction }
+        set direction(direction) {
+            Object.defineProperty(this, "_direction", {
+                value: direction
+            });
+        }
+
+        get idPredicate() { return this._idPredicate }
+        set idPredicate(pred) {
+            Object.defineProperty(this, "_idPredicate", {
+                value: pred
+            })
+        }
+
+        resourceReceivedPipeline(r) {
+            return;
+        }
+
+        get resources() {
+            return new Promise((resolve, reject) => {
+                if (this.resultSet.results) {
+                    resolve(this.resultSet);
+                } else {
+
+                    const req = new Request(`${
+                        this.api.href
+                    }?order=${
+                        this.order
+                    }&direction=${
+                        this.direction || "asc"
+                    }`);
+
+                    Utils.fetch(this, req, {
+                        method: "GET",
+                        credentials: "same-origin"
+                    }, reject, data => {
+                        this.resultSet = data;
+                        this.resultSet.results.forEach(
+                            x => this.resourceReceivedPipeline(x)
+                        );
+                        resolve(this.resultSet);
+                    });
+                }
+            });
+        }
+
+        init() {
+            this.$pages.select("loading");
+        }
+
+        get newSelectedResource() {
+            return new Promise((resolve, reject) => {
+                const req = new Request(`${
+                    this.api.href
+                }${
+                    this.$route.data[this.routeKey]
+                }`);
+
+                Utils.fetch(this, req, {
+                    method: "GET",
+                    credentials: "same-origin"
+                }, reject, data => {
+                    this.resourceReceivedPipeline(data)
+                    resolve(data);
+                });
+            });
+        }
+
+        async _getSelectedResource() {
+            const resources = await this.resources;
+            const candidates =
+                resources.results.filter(
+                    x => this.idPredicate(x)
+                );
+            return candidates.length
+                ? candidates[0]
+                : await this.newSelectedResource;
+        }
+
+        get selectedResource() {
+            return this._getSelectedResource();
+        }
+
+        harvest(data, key) {
+            return (
+                [data].reduce(function go(p,c) {
+                    if (c && typeof c === "object") {
+                        return Object.keys(c).map(k => c[k]).reduce(
+                            go, p.concat(
+                                Object.keys(c).filter(k => k === key).map(
+                                    k => c[k]
+                                )
+                            )
+                        );
+                    } else if (Array.isArray(c)) {
+                        return c.reduce(go, p);
+                    }
+                    return p;
+                }, [])
+            );
+        }
+
+    }
+
+    window.Sut.MasterDetail = MasterDetail;
+
+})();
+</script>

@@ -1,0 +1,239 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/lib/nclk/format.html">
+
+<link rel="import" href="/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+<link rel="import" href="/bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="/bower_components/iron-icons/maps-icons.html">
+<link rel="import" href="/bower_components/paper-spinner/paper-spinner-lite.html">
+
+<template>
+    <style>
+    :host {
+        color: #39d;
+        display: block;
+        width: 400px;
+    }
+    a {
+        text-decoration: none;
+        color: var(--app-primary-color);
+    }
+    paper-material {
+        display: block;
+    }
+    paper-material:hover {
+        background: #fff;
+        transition: all 0.5s ease-out;
+    }
+    paper-item {
+        display: block;
+        overflow: auto;
+    }
+    paper-item-body {
+        height: 100px;
+    }
+    paper-item-body div {
+        white-space: inherit;
+    }
+    ul {
+        list-style: none outside none;
+        margin: 0;
+        padding: 0;
+    }
+    iron-icon {
+        height: 20px;
+        width: 20px;
+    }
+    iron-icon.pass {
+        color: #8c8;
+    }
+    iron-icon.fail {
+        color: #f88;
+    }
+    iron-icon.running {
+        color: #fa5;
+    }
+    iron-icon.interrupted {
+        color: darkgrey;
+    }
+    paper-spinner-lite {
+        width: 20px;
+        height: 20px;
+        --paper-spinner-stroke-width: 2px;
+        --paper-spinner-color: #fa5;
+    }
+    .hidden {
+        display: none;
+    }
+    .bold { font-weight: bold; }
+    .light-italic {
+        font-style: italic;
+        color: #aaa;
+    }
+    #date {
+        color: #aaa;
+        font-size: .85em;
+    }
+    </style>
+</template>
+
+<script>
+(() => {
+
+    class TestRunListItem extends Nclk.Hoquet(HTMLElement) {
+
+        constructor(testRun) {
+            super();
+            this.testRun = testRun;
+        }
+
+        get testRun() { return this._testRun }
+        set testRun(testRun) {
+            this._testRun = testRun;
+            this.render();
+            Object.defineProperties(this, {
+                $card: {
+                    value: this.shadowRoot.getElementById("card"),
+                    writable: true
+                }
+            });
+            this.$card.addEventListener("mouseenter", _=> this._pop());
+            this.$card.addEventListener("mouseleave", _=> this._drop());
+
+            if (this.status === "running")
+                setTimeout(_ => this.poll(), 2000);
+        }
+
+        poll() {
+            const req = new Request(this.testRun.href);
+            fetch(req, {
+                method: "GET",
+                credentials: "same-origin"
+            }).then(resp => {
+                if (!resp.ok)
+                    throw resp;
+                else {
+                    resp.json().then(data => {
+                        this.testRun = data;
+                    });
+                }
+            });
+        }
+
+        _pop() { this.$card.elevation = 3; }
+        _drop() { this.$card.elevation = 1; }
+
+        get icon() {
+            return this.testRun.status === "complete"
+                ? this.testRun.num_failures
+                    ? "icons:thumb-down"
+                    : "icons:thumb-up"
+                : this.testRun.status === "interrupted"
+                ? "icons:alarm-off"
+                : this.testRun.status === "error"
+                ? "icons:error"
+                : "icons:alarm";
+        }
+
+        get status() {
+            return this.testRun.status === "complete"
+                ? this.testRun.num_failures
+                    ? "fail"
+                    : "pass"
+                : this.testRun.status === "interrupted"
+                ? "interrupted"
+                : this.testRun.status === "error"
+                ? "fail"
+                : this.testRun.status === "running"
+                ? "running"
+                : "unknown";
+        }
+
+        get duration() {
+            return Format.duration(
+                new Date(this.testRun.modified) - new Date(this.testRun.created)
+            );
+        }
+
+        get miniReport() {
+            const tr = this.testRun;
+            return (
+                !tr.num_checkpoints ? ""
+                : [ "span"
+                  , [ "span", {class: "bold"}, `${tr.num_failures}` ]
+                  , " failures out of "
+                  , [ "span", {class: "bold"}, tr.num_checkpoints ]
+                  , " checkpoints "
+                  , [ "span", {class: "light-italic"}, `(${this.duration})` ]
+                  ]
+            );
+        }
+
+        get template() {
+            return (
+                [ "a"
+                , { href: `/test-runs/${this.testRun.id}`
+                  , tabindex: -1
+                  }
+                , [ "paper-material"
+                  , { id: "card"
+                    , elevation: 1
+                    , animated: null
+                    }
+                  , [ "paper-item"
+                    , [ "paper-item-body"
+                      , { "three-line": null }
+                      , [ "div"
+                        , { class: "name" }
+                        , [ "span"
+                          , [ "paper-spinner-lite"
+                            , { active: null
+                              , id: "spinner"
+                              , class: this.status === "running"
+                                    ? "" : "hidden"
+                              }
+                            , null
+                            ]
+                          , [ "iron-icon"
+                            , { icon: this.icon
+                              , id: "icon"
+                              , class: this.status === "running"
+                                    ? "hidden" : this.status
+                              }
+                            , null
+                            ]
+                          ]
+                        , ` ${this.testRun.program_name}`
+                        , ` (${
+                                // TODO: this exact thing is also used in test-runs.html
+                                // make it DRY
+                                Format.testRunLabel(this.testRun)
+                            })`
+                        ]
+
+                      , [ "div"
+                        , { secondary: true
+                          , id: "report"
+                          }
+                        , this.miniReport
+                        ]
+
+                      , [ "div"
+                        , { id: "date" }
+                        , new Date(this.testRun.created).toLocaleString()
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+            );
+        }
+    }
+
+    window.Sut.TestRunListItem = TestRunListItem;
+    window.customElements.define("sut-test-run-list-item", TestRunListItem);
+
+})()
+</script>

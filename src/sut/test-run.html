@@ -1,0 +1,306 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/input/text.html">
+<link rel="import" href="/src/sut/input/named-list.html">
+<link rel="import" href="/src/sut/input/document.html">
+
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="/bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="/bower_components/juicy-ace-editor/juicy-ace-editor.html">
+
+
+<template>
+    <style>
+    /*form {
+        margin: 10px;
+    }*/
+    .container {
+        display: flex;
+        flex-direction: row;
+        padding: 10px;
+    }
+    .menu {
+        min-width: 15%;
+    }
+    .content {
+        min-width: 85%;
+    }
+    #menu {
+        display: block;
+        margin: 10px 0 0 0;
+        border: 1px dotted #aaf;
+        padding: 10px;
+    }
+    #all {
+        display: none;
+    }
+    paper-button[raised] {
+        background: linear-gradient(145deg, #47f, #7bf);
+        color: #fff;
+    }
+    paper-button[raised]#stop {
+        background: linear-gradient(145deg, #f00, #f72);
+    }
+    paper-button[raised]#stop.disabled {
+        background: linear-gradient(145deg, #555, #ccc);
+    }
+    </style>
+    <div class="container">
+        <div class="menu">
+            <paper-button id="stop" raised>Stop</paper-button>
+            <paper-button id="rerun" raised>Rerun</paper-button>
+            <iron-selector id="menu" attr-for-selected="name"
+                role="navigation">
+                <paper-item name="summary">Summary</paper-item>
+                <paper-item name="configuration">Configuration</paper-item>
+                <paper-item name="checkpoints">Checkpoints</paper-item>
+                <paper-item name="logs">Logs</paper-item>
+            </iron-selector>
+        </div>
+        <div class="content">
+            <iron-pages id="pages" attr-for-selected="name" role="navigation">
+                <div name="summary">
+                    <juicy-ace-editor theme="ace/theme/chrome" wrapmode
+                        id="summary" readonly></juicy-ace-editor>
+                </div>
+                <div name="configuration">
+                    <juicy-ace-editor theme="ace/theme/chrome" mode="ace/mode/json"
+                        id="configuration"></juicy-ace-editor>
+                </div>
+                <div name="checkpoints">
+                    <juicy-ace-editor theme="ace/theme/chrome"
+                        wrapmode id="checkpoints"></juicy-ace-editor>
+                </div>
+                <div name="logs">
+                    <juicy-ace-editor theme="ace/theme/chrome"
+                        wrapmode id="logs"></juicy-ace-editor>
+                </div>
+            </iron-pages>
+            <div id="all"></div>
+        </div>
+    </div>
+</template>
+
+<script>
+(() => {
+
+    class TestRun extends Nclk.Hoquet(HTMLElement) {
+
+        constructor(testRun, apiBase) {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $pages: {
+                    value: this.shadowRoot.getElementById("pages")
+                },
+                $allPage: {
+                    value: this.shadowRoot.getElementById("all")
+                },
+                $menu: {
+                    value: this.shadowRoot.getElementById("menu")
+                },
+                $rerunButton: {
+                    value: this.shadowRoot.getElementById("rerun")
+                },
+                $stopButton: {
+                    value: this.shadowRoot.getElementById("stop")
+                },
+                $configuration: {
+                    value: this.shadowRoot.getElementById("configuration")
+                },
+                $summary: {
+                    value: this.shadowRoot.getElementById("summary")
+                },
+                $checkpoints: {
+                    value: this.shadowRoot.getElementById("checkpoints")
+                },
+                $logs: {
+                    value: this.shadowRoot.getElementById("logs")
+                }
+            });
+
+            this.bind();
+
+            if (testRun) this.testRun = testRun;
+            if (apiBase) this.apiBase = apiBase;
+        }
+
+        get testRun() { return this._testRun }
+        set testRun(testRun) {
+            Object.defineProperty(this, "_testRun", {
+                value: testRun
+            });
+        }
+
+        get apiBase() { return this._apiBase }
+        set apiBase(apiBase) {
+            Object.defineProperty(this, "_apiBase", {
+                value: apiBase
+            });
+        }
+
+        relatedResources(name, extra = "") {
+            return new Promise((resolve, reject) => {
+                const req = new Request(
+                    `${this.testRun["related-resources"][name]}${extra}`
+                );
+                Utils.fetch(this, req, {
+                    method: "GET", credentials: "same-origin"
+                }, reject, resolve);
+            });
+        }
+
+        async initSummary() {
+            const harvests = await this.relatedResources("harvests");
+            harvests.results.length && harvests.results[0].data.forEach(r => {
+                this.$summary.value += "\n" + r.title.toUpperCase() + "\n";
+                r.fields.forEach(f => {
+                    this.$summary.value += f.title + "\n";
+                    this.$summary.value += f.value + "\n\n";
+                });
+                this.$summary.value += "\n\n\n";
+            });
+        }
+
+        async initCheckpoints() {
+            const checkpoints = await this.relatedResources(
+                "checkpoints", "&per-page=10"
+            );
+            this.$checkpoints.value += JSON.stringify(checkpoints.results, false, 4);
+        }
+
+        async initLogs() {
+            const logs = await this.relatedResources(
+                "log-entries", "&order=created&direction=asc"
+            );
+            logs.results.forEach(log => {
+                let level = log.level.toUpperCase();
+                let len = level.length;
+                while (len++ < 5)
+                    level += " ";
+                this.$logs.value += level + ": ";
+                this.$logs.value += log.message + "\n";
+            });
+        }
+
+        async init() {
+            const tr = this.testRun;
+
+            if (tr.status !== "running")
+                this.disableStopButton();
+
+            this.initSummary();
+            this.initCheckpoints();
+            this.initLogs();
+            
+            this.$configuration.setAttribute("readonly", true);
+            this.$configuration.value = JSON.stringify(tr.env, false, 4);
+            this.$configuration.focus();
+
+            if (tr.status === "running")
+                this.$menu.select("logs");
+            else
+                this.$menu.select("summary");
+        }
+
+        editorReady(editor) {
+            editor.setOptions({
+                maxLines: Infinity
+            });
+        }
+
+        rerunTest() {
+            window.history.pushState({}, null, "/programs/" + this.testRun.program_name);
+            window.dispatchEvent(new CustomEvent("location-changed"));
+            this.dispatchEvent(new CustomEvent("retest", {
+                detail: {
+                    testRun: this.testRun
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
+
+        disableStopButton() {
+            this.$stopButton.disabled = true;
+            this.$stopButton.innerHTML = this.testRun.status;
+            this.$stopButton.setAttribute(
+                "class", "disabled"
+            );
+        }
+
+        pollInterrupted() {
+            const req = new Request(
+                this.testRun.href
+            );
+            Utils.fetch(this, req, {
+                method: "GET", credentials: "same-origin"
+            }, resp => {
+                this.$stopButton.innerHTML = `error (${resp.statusCode})`;
+            }, data => {
+                this.$stopButton.innerHTML = data.status;
+                if (data.status === "running") {
+                    this.pollInterrupted();
+                }
+            });
+        }
+
+        stopTest() {
+
+            const req = new Request(
+                this.apiBase + "/actions/signal"
+            );
+            Utils.fetch(this, req, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: new Headers({
+                    "Content-Type": "application/json"
+                }),
+                body: JSON.stringify({
+                    "message": "interrupt",
+                    "testrun-id": this.testRun.id
+                })
+            }, resp => {
+                throw `Failed to create test run. Status was ${resp.status}`
+            }, _ => {
+                this.disableStopButton();
+                this.pollInterrupted();
+            });
+
+        }
+
+        bind() {
+            this.$rerunButton.addEventListener("click", _ => this.rerunTest());
+            this.$stopButton.addEventListener("click", _ => this.stopTest());
+
+            this.$menu.addEventListener(
+                "selected-item-changed",
+                e => e.target.selectedItem && e.target.selectedItem.focus()
+            );
+            this.$menu.addEventListener(
+                "selected-changed",
+                e => this.$pages.select(e.target.selected)
+            );
+
+            ["$configuration", "$summary", "$checkpoints", "$logs"].forEach(x =>
+                this[x].addEventListener(
+                    "editor-ready",
+                    e => this.editorReady(e.target.container.env.editor)
+                )
+            );
+        }
+    }
+
+    window.Sut.TestRun = TestRun;
+    window.customElements.define("sut-test-run", TestRun);
+
+    function cpDisplayName(cp) {
+        return cp && cp.meta && cp.meta.name || cp.name;
+    }
+    function cpType(cp) {
+        return cp.meta && cp.meta.widget && cp.meta.widget.type;
+    }
+
+})()
+</script>

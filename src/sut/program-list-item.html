@@ -1,0 +1,112 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+
+<link rel="import" href="/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+
+<template>
+    <style>
+    a {
+        text-decoration: none;
+        color: var(--app-primary-color);
+    }
+    :host {
+        color: #f33;
+        display: block;
+    }
+    paper-material {
+        display: block;
+    }
+    paper-material:hover {
+        background: #fff;
+        transition: all 0.5s ease-out;
+    }
+    paper-item {
+        display: block;
+        height: 200px;
+        padding: 10px;
+        overflow: auto;
+    }
+    paper-item-body div {
+        white-space: inherit;
+    }
+    /*.alias paper-material {
+        background: #f5f5ee;
+    }
+    .alias paper-material:hover {
+        background: #fff;
+        transition: all 0.5s ease-out;
+    }*/
+    .alias div.name {
+        font-weight: bold;
+        color: #f00;
+    }
+    ul {
+        list-style: none outside none;
+        margin: 0;
+        padding: 0;
+    }
+    </style>
+</template>
+
+<script>
+(() => {
+
+    class ProgramListItem extends Nclk.Hoquet(HTMLElement) {
+
+        constructor(program) {
+            super();
+            this.program = program;
+            this.render();
+            Object.defineProperties(this, {
+                $card: {
+                    value: this.shadowRoot.getElementById("card")
+                }
+            });
+            this.$card.addEventListener("mouseenter", _=> this._pop());
+            this.$card.addEventListener("mouseleave", _=> this._drop());
+        }
+
+        _pop() { this.$card.elevation = 3; }
+        _drop() { this.$card.elevation = 1; }
+
+        get template() {
+            return (
+                [ "a"
+                , { href: `/programs/${this.program.name}`
+                  , tabindex: -1
+                  //, title: this.this.program.documentation.description
+                  , class: this.program.resolutions.length
+                        ? "alias" : ""
+                  }
+                , [ "paper-material"
+                  , { id: "card"
+                    , elevation: 1
+                    , animated: null
+                    }
+                  , [ "paper-item"
+                    , [ "paper-item-body"
+                      , { "two-line": true }
+
+                      , [ "div"
+                        , { class: "name" }
+                        , this.program.name
+                        ]
+
+                      , [ "div"
+                        , { secondary: true }
+                        , this.program.documentation.description
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+            );
+        }
+    }
+
+    window.Sut.ProgramListItem = ProgramListItem;
+    window.customElements.define("sut-program-list-item", ProgramListItem);
+
+})()
+</script>

@@ -1,4 +1,3 @@
-<link rel="import" href="../bower_components/polymer/polymer-element.html">
 <script>
     class Format extends Polymer.Element {
         static get is() { return "format"; }
@@ -17,6 +16,11 @@
                 seconds && seconds,
                 seconds && " seconds"
             ].filter(x => x).join("");
+        }
+
+        static testRunLabel(tr) {
+            return tr && tr.env && tr.env.ENVIRONMENTS &&
+                tr.env.ENVIRONMENTS.map(x => x.name).join(", ");
         }
     }
 

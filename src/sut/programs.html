@@ -1,0 +1,126 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/master-detail.html">
+<link rel="import" href="/src/sut/program.html">
+<link rel="import" href="/src/sut/program-list-item.html">
+
+<template>
+    <style>
+        ol {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        sut-program-list-item {
+            float: left;
+            width: 200px;
+        }
+        sut-program-list-item:hover {
+            background: #fff;
+            transition: all 0.5s ease-out;
+        }
+    </style>
+</template>
+
+<script>
+(() => {
+
+    const ownerDocument = (
+        document._currentScript || document.currentScript
+    ).ownerDocument;
+    const _template = ownerDocument.querySelector("template");
+
+    class Programs extends Sut.MasterDetail {
+
+        constructor() {
+            super();
+
+            this.shadowRoot.appendChild(
+                document.importNode(_template.content, true)
+            );
+
+            Object.defineProperties(this, {
+                $list: {
+                    value: document.createElement("ol")
+                },
+                $detail: {
+                    value: document.createElement("div")
+                }
+            });
+
+            this.$list.setAttribute("name", "master");
+            this.$detail.setAttribute("name", "detail");
+            this.$pages.appendChild(this.$list);
+            this.$pages.appendChild(this.$detail);
+            this.$pages.attrForSelected = "name";
+
+            this.routeKey = "name";
+            this.$route.pattern = `/:${this.routeKey}`;
+            this.order = "name";
+            this.idPredicate = x => (
+                x["name"] === this.$route.data["name"]
+            );
+        }
+
+        set testRun(tr) {
+            //this.init(tr);
+        }
+
+        get configProfilesHref() { return this._cphref }
+        set configProfilesHref(href) {
+            Object.defineProperty(this, "_cphref", {
+                value: href
+            });
+        }
+
+        resourceReceivedPipeline(r) {
+            // XXX: doesn't it seem like this would be expensive?
+            r.resolutions = this.harvest(r.data, "resolve");
+            r.modules = this.harvest(r.data, "module");
+        }
+
+        async init(testRun = null) {
+            let subtitle = "Programs";
+
+            super.init();
+            if (this.$route.active) {
+                const $program = new Sut.Program(
+                    await this.selectedResource, this.configProfilesHref, this.apiBase);
+                this.$detail.firstChild && this.$detail.removeChild(
+                    this.$detail.firstChild);
+                $program.init(testRun);
+                this.$detail.appendChild($program);
+                this.$pages.select("detail");
+                subtitle += `&nbsp;&raquo; ${(await this.selectedResource).name}`
+            } else {
+                const programs = await this.resources;
+
+                while (this.$list.firstChild)
+                    this.$list.removeChild(this.$list.firstChild);
+
+                programs.results.forEach(p => {
+                    this.appendProgram(p);
+                });
+
+                this.$pages.select("master");
+            }
+            this.dispatchEvent(new CustomEvent("subtitle-change", {
+                detail: {
+                    subtitle: subtitle
+                },
+                composed: true
+            }));
+        }
+
+        appendProgram(program) {
+            const $li = document.createElement("li");
+            const $program = new Sut.ProgramListItem(program);
+            $li.appendChild($program);
+            this.$list.appendChild($li);
+        }
+    }
+
+    window.Sut.Programs = Programs;
+    window.customElements.define("sut-programs", Programs);
+
+})();
+</script>

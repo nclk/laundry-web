@@ -1,0 +1,126 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/lib/nclk/format.html">
+<link rel="import" href="/src/sut/master-detail.html">
+<link rel="import" href="/src/sut/test-run-list-item.html">
+<link rel="import" href="/src/sut/test-run.html">
+
+<template>
+    <style>
+        ol {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        sut-test-run-list-item {
+            float: left;
+            /*width: 200px;*/
+        }
+        sut-test-run-list-item:hover {
+            background: #fff;
+            transition: all 0.5s ease-out;
+        }
+    </style>
+</template>
+
+<script>
+(() => {
+
+    const ownerDocument = (
+        document._currentScript || document.currentScript
+    ).ownerDocument;
+    const _template = ownerDocument.querySelector("template");
+
+    class TestRuns extends Sut.MasterDetail {
+
+        constructor() {
+            super();
+
+            this.shadowRoot.appendChild(
+                document.importNode(_template.content, true)
+            );
+
+            Object.defineProperties(this, {
+                $list: {
+                    value: document.createElement("ol")
+                },
+                $detail: {
+                    value: document.createElement("div")
+                }
+            });
+
+            this.containers = [this.$list, this.$detail];
+
+            this.routeKey = "id";
+            this.$route.pattern = `/:${this.routeKey}`;
+            this.order = "created";
+            this.direction = "desc";
+            this.idPredicate = x => (
+                x["id"] === this.$route.data["id"]
+            );
+        }
+
+        resourceReceivedPipeline(r) { }
+
+        async init() {
+            let subtitle = "Test Runs";
+
+            super.init();
+
+            this.resultSet = {};
+
+            if (this.$route.active) {
+                const $testRun = new Sut.TestRun(
+                    await this.selectedResource, this.apiBase
+                );
+                const testRun = await this.selectedResource;
+                this.$detail.firstChild && this.$detail.removeChild(
+                    this.$detail.firstChild
+                );
+                this.$detail.appendChild($testRun);
+                this.$pages.select("detail");
+                subtitle += `&nbsp;&raquo; ${
+                    testRun.program_name
+                } (${
+                    Format.testRunLabel(testRun)
+                }) &raquo; ${
+                    new Date(testRun.created).toLocaleString()
+                } &mdash; ${(testRun.status === "complete"
+                        ? testRun.num_failures > 0
+                            ? "failed"
+                            : "success"
+                        : testRun.status
+                ).toUpperCase()}`
+                $testRun.init();
+            } else {
+                const testRuns = await this.resources;
+
+                while (this.$list.firstChild)
+                    this.$list.removeChild(this.$list.firstChild);
+
+                testRuns.results.forEach(p => {
+                    this.appendTestRun(p);
+                });
+
+                this.$pages.select("master");
+            }
+            this.dispatchEvent(new CustomEvent("subtitle-change", {
+                detail: {
+                    subtitle: subtitle
+                },
+                composed: true
+            }));
+        }
+
+        appendTestRun(testRun) {
+            const $li = document.createElement("li");
+            const $testRun = new Sut.TestRunListItem(testRun);
+            $li.appendChild($testRun);
+            this.$list.appendChild($li);
+        }
+    }
+
+    window.Sut.TestRuns = TestRuns;
+    window.customElements.define("sut-test-runs", TestRuns);
+
+})();
+</script>
