@@ -24,9 +24,9 @@
 <script>
 (() => {
     
-    class DocumentInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
+    class DocumentInput extends Nclk.Hoquet(HTMLElement) {
 
-        constructor(configProfile, mode="json") {
+        constructor(configProfile, defaultValue = null, mode="json") {
             super();
             this.render();
             Object.defineProperties(this, {
@@ -46,12 +46,12 @@
             this.$sutInput.configProfile = configProfile;
 
             this.$reset.addEventListener(
-                "click", e => this.init()
+                "click", e => this.init(defaultValue)
             );
-            this.init();
+            this.init(defaultValue);
         }
 
-        init() {
+        init(def = null) {
             if (this.$sutInput.widget) {
                 if (this.$sutInput.widget["read-only"]) {
                     this.$reset.disabled = true;
@@ -65,14 +65,11 @@
                     maxLines: Infinity
                 });
             });
+            const data = def || this.$sutInput.configProfile.data;
             if (this.mode === "yaml") {
-                this.$input.value = jsyaml.dump(
-                    this.$sutInput.configProfile.data
-                );
+                this.$input.value = jsyaml.dump(data);
             } else {
-                this.$input.value = JSON.stringify(
-                    this.$sutInput.configProfile.data, false, 4
-                );
+                this.$input.value = JSON.stringify(data, false, 4);
             }
         }
 

@@ -263,14 +263,15 @@
         }
 
         initDefinition() {
-            const $input = new Sut.Input.DocumentInput(this.program, "yaml");
+            const $input = new Sut.Input.DocumentInput(this.program, null, "yaml");
             this.$definition.appendChild($input);
         }
 
-        async init(testRun = null) {
+        async init() {
             const prog = this.program;
             const configProfiles = (await this.configProfiles).results;
             const $allSelector = document.createElement("paper-item");
+            const testRun = ("testRun" in history.state) && history.state.testRun;
 
             this.initLastRuns();
 
@@ -281,22 +282,25 @@
             configProfiles.map(cp => {
                 let $input;
                 let $menuItem = document.createElement("paper-item");
+                const defaultValue = testRun && (
+                    cp.name in testRun.env && testRun.env[cp.name]
+                );
 
                 switch (cpType(cp)) {
                 case "text":
-                    $input = new Sut.Input.TextInput(cp);
+                    $input = new Sut.Input.TextInput(cp, defaultValue);
                     break;
                 case "number":
-                    $input = new Sut.Input.NumberInput(cp);
+                    $input = new Sut.Input.NumberInput(cp, defaultValue);
                     break;
                 case "named-list":
-                    $input = new Sut.Input.NamedListInput(cp);
+                    $input = new Sut.Input.NamedListInput(cp, defaultValue);
                     break;
                 case "document":
-                    $input = new Sut.Input.DocumentInput(cp);
+                    $input = new Sut.Input.DocumentInput(cp, defaultValue);
                     break;
                 default:
-                    $input = new Sut.Input.Input(cp);
+                    $input = new Sut.Input.Input(cp, defaultValue);
                     break;
                 }
                 this.inputs.push($input);

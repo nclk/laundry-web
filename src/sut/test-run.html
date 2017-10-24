@@ -211,15 +211,16 @@
         }
 
         rerunTest() {
-            window.history.pushState({}, null, "/programs/" + this.testRun.program_name);
+            let stateObj = {
+                testRun: this.testRun
+            };
+            window.history.pushState(stateObj, null, "/programs/" + this.testRun.program_name);
             window.dispatchEvent(new CustomEvent("location-changed"));
-            this.dispatchEvent(new CustomEvent("retest", {
-                detail: {
-                    testRun: this.testRun
-                },
-                bubbles: true,
-                composed: true
-            }));
+            //this.dispatchEvent(new CustomEvent("retest", {
+            //    detail: stateObj,
+            //    bubbles: true,
+            //    composed: true
+            //}));
         }
 
         disableStopButton() {
