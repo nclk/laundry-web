@@ -86,5 +86,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 sut-api-base="${SUT_API_PROTOCOL}://${SUT_API_HOST}/api/v1"
                 default-resource-type="programs">
         </sut-app> 
+        <script src="/bower_components/js-yaml/dist/js-yaml.min.js"></script>
     </body>
 </html>

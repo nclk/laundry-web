@@ -31,7 +31,8 @@
     "hoquet": "*",
     "iron-flex-layout": "PolymerElements/iron-flex-layout#^2.0.0",
     "juicy-ace-editor": "^2.0.4",
-    "paper-spinner": "PolymerElements/paper-spinner#^2.0.0"
+    "paper-spinner": "PolymerElements/paper-spinner#^2.0.0",
+    "js-yaml": "^3.10.0"
   },
   "devDependencies": {
     "web-component-tester": "6.0.0-prerelease.5"

@@ -4,7 +4,8 @@
 <link rel="import" href="/bower_components/paper-input/paper-textarea.html">
 <link rel="import" href="/bower_components/juicy-ace-editor/juicy-ace-editor.html">
 
-<template class="DocumentInput">
+
+<template>
 
     <style>
         juicy-ace-editor {
@@ -16,7 +17,7 @@
         <span slot="buttons">
             <paper-button id="reset">Reset</paper-button>
         </span>
-        <juicy-ace-editor theme="ace/theme/chrome" wrapmode="true"
+        <juicy-ace-editor theme="ace/theme/chrome" wrapmode="true" mode="ace/mode/yaml"
             id="input" slot="input"></juicy-ace-editor>
     </sut-input>
 </template>
@@ -24,9 +25,9 @@
 <script>
 (() => {
     
-    class DocumentInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
+    class DefinitionInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
 
-        constructor(configProfile, mode="json") {
+        constructor(configProfile) {
             super();
             this.render();
             Object.defineProperties(this, {
@@ -38,9 +39,6 @@
                 },
                 $reset: {
                     value: this.shadowRoot.getElementById("reset")
-                },
-                mode: {
-                    value: mode
                 }
             });
             this.$sutInput.configProfile = configProfile;
@@ -48,32 +46,25 @@
             this.$reset.addEventListener(
                 "click", e => this.init()
             );
-            this.init();
-        }
-
-        init() {
             if (this.$sutInput.widget) {
                 if (this.$sutInput.widget["read-only"]) {
                     this.$reset.disabled = true;
                     this.$input.setAttribute("readonly", true);
                 }
             }
-            this.$input.setAttribute("mode", `ace/mode/${this.mode}`);
             this.$input.addEventListener("editor-ready", e => {
                 const editor = e.target.container.env.editor;
                 editor.setOptions({
                     maxLines: Infinity
                 });
             });
-            if (this.mode === "yaml") {
-                this.$input.value = jsyaml.dump(
-                    this.$sutInput.configProfile.data
-                );
-            } else {
-                this.$input.value = JSON.stringify(
-                    this.$sutInput.configProfile.data, false, 4
-                );
-            }
+            this.init();
+        }
+
+        init() {
+            this.$input.value = JSON.stringify(
+                this.$sutInput.configProfile.data, false, 4
+            );
         }
 
         get value() {
