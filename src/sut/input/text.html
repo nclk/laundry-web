@@ -20,9 +20,9 @@
 <script>
 (() => {
     
-    class TextInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
+    class TextInput extends Nclk.Hoquet(HTMLElement) {
 
-        constructor(configProfile) {
+        constructor(configProfile, defaultValue) {
             super();
             this.render();
             Object.defineProperties(this, {
@@ -47,11 +47,11 @@
             this.$reset.addEventListener(
                 "click", e => this.init()
             );
-            this.init();
+            this.init(defaultValue);
         }
 
-        init() {
-            this.$input.value = this.$sutInput.configProfile.data;
+        init(def = null) {
+            this.$input.value = def || this.$sutInput.configProfile.data;
         }
 
         get value() {
@@ -67,8 +67,8 @@
     window.customElements.define("sut-input-text", TextInput);
 
     class NumberInput extends TextInput {
-        constructor(cp) {
-            super(cp);
+        constructor(cp, defaultValue) {
+            super(cp, defaultValue);
             this.$input.autoValidate = true;
             this.$input.pattern = "0x[0-9a-fA-F]+|[0-9]+|[0-9]+.[0-9]+";
             this.$input.errorMessage = `

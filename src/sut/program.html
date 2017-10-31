@@ -70,12 +70,19 @@
     #last-runs sut-test-run-list-item {
         margin-left: -25px;
     }
+    #definition-selector {
+        color: #d50;
+        /*font-weight: bold;*/
+        font-style: italic;
+    }
     </style>
     <div class="container">
         <div class="menu">
             <paper-button id="run" raised>RUN</paper-button>
             <iron-selector id="config-profile-menu" attr-for-selected="name"
                 role="navigation">
+                <paper-item id="all-selector" name="all" style="color:#16f">SHOW ALL</paper-item>
+                <paper-item id="definition-selector" name="definition">Definition</paper-item>
             </iron-selector>
             <div id="aliases" class="submenu">
                 <h1>Includes:</h1>
@@ -90,7 +97,9 @@
             <form method="post" id="form">
                 <iron-pages id="input-pages" attr-for-selected="name" role="navigation">
                 </iron-pages>
-                <div id="all"></div>
+                <div id="all">
+                    <div id="definition" name="definition"></div>
+                </div>
             </form>
         </div>
     </div>
@@ -118,6 +127,9 @@
                 $allPage: {
                     value: this.shadowRoot.getElementById("all")
                 },
+                $allSelector: {
+                    value: this.shadowRoot.getElementById("all-selector")
+                },
                 $configProfileMenu: {
                     value: this.shadowRoot.getElementById("config-profile-menu")
                 },
@@ -135,6 +147,9 @@
                 },
                 $lastRuns: {
                     value: this.shadowRoot.getElementById("last-runs")
+                },
+                $definition: {
+                    value: this.shadowRoot.getElementById("definition")
                 }
             });
 
@@ -247,39 +262,45 @@
             });
         }
 
-        async init(testRun = null) {
+        initDefinition() {
+            const $input = new Sut.Input.DocumentInput(this.program, null, "yaml");
+            this.$definition.appendChild($input);
+        }
+
+        async init() {
             const prog = this.program;
             const configProfiles = (await this.configProfiles).results;
             const $allSelector = document.createElement("paper-item");
+            const testRun = ("testRun" in history.state) && history.state.testRun;
 
             this.initLastRuns();
 
-            $allSelector.innerHTML = "SHOW ALL";
-            $allSelector.setAttribute("name", "all");
-            $allSelector.style.color = "#16f";
-            this.$configProfileMenu.appendChild($allSelector);
+            this.initDefinition();
 
             this.resolutions();
 
             configProfiles.map(cp => {
                 let $input;
                 let $menuItem = document.createElement("paper-item");
+                const defaultValue = testRun && (
+                    cp.name in testRun.env && testRun.env[cp.name]
+                );
 
                 switch (cpType(cp)) {
                 case "text":
-                    $input = new Sut.Input.TextInput(cp);
+                    $input = new Sut.Input.TextInput(cp, defaultValue);
                     break;
                 case "number":
-                    $input = new Sut.Input.NumberInput(cp);
+                    $input = new Sut.Input.NumberInput(cp, defaultValue);
                     break;
                 case "named-list":
-                    $input = new Sut.Input.NamedListInput(cp);
+                    $input = new Sut.Input.NamedListInput(cp, defaultValue);
                     break;
                 case "document":
-                    $input = new Sut.Input.DocumentInput(cp);
+                    $input = new Sut.Input.DocumentInput(cp, defaultValue);
                     break;
                 default:
-                    $input = new Sut.Input.Input(cp);
+                    $input = new Sut.Input.Input(cp, defaultValue);
                     break;
                 }
                 this.inputs.push($input);
@@ -294,7 +315,7 @@
                 this.$allPage.appendChild(els[1]);
             });
             this.$configProfileMenu.select("all");
-            $allSelector.focus();
+            this.$allSelector.focus();
         }
 
         runTest() {

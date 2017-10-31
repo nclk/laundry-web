@@ -32,9 +32,9 @@
 <script>
 (() => {
     
-    class NamedListInput extends Nclk.Input(Nclk.Hoquet(HTMLElement)) {
+    class NamedListInput extends Nclk.Hoquet(HTMLElement) {
 
-        constructor(configProfile) {
+        constructor(configProfile, defaultValue) {
             super();
             this.render();
             Object.defineProperties(this, {
@@ -61,16 +61,16 @@
             , ["$reset", {}]
             ].forEach(x => {
                 this[x[0]].addEventListener(
-                    "click", e => this.filter(x[1])
+                    "click", e => this.filter(x[1], defaultValue)
                 );
                 if (this.$sutInput.widget["read-only"]) {
                     this[x[0]].disabled = true;
                 }
             });
-            this.init();
+            this.init(defaultValue);
         }
 
-        init() {
+        init(def = null) {
             const configProfile = this.$sutInput.configProfile;
             const data = configProfile.data;
             const widget = this.$sutInput.widget;
@@ -97,10 +97,10 @@
 
                 $input.appendChild($checkbox);
             });
-            this.filter();
+            this.filter({}, def);
         }
 
-        filter(options = {}) {
+        filter(options = {}, def = null) {
             const { all: all, none: none } = options;
             const widget = this.$sutInput.widget;
 
@@ -108,6 +108,7 @@
                 const name = _name(widget, $checkbox.value);
                 $checkbox.checked = all ? true
                     : none ? false
+                    : def ? ~def.findIndex(x => _name(widget, x) === name)
                     : widget.filter ? ~widget.filter.indexOf(name)
                     : widget.remove ? !~widget.remove.indexOf(name)
                     : true;

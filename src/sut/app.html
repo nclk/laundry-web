@@ -59,6 +59,10 @@
         --paper-spinner-stroke-width: 2px;
         --paper-spinner-color: #fa5;
     }
+    #subtitle a {
+        text-decoration: underline;
+        color: #faa;
+    }
     </style>
 
     <app-location id="location"></app-location>
@@ -164,16 +168,12 @@
         }
 
         bindProgressIndication() {
-            let requests = 0;
             this.addEventListener("request", _ => {
-                requests = ++requests > 0 ? requests : 1;
                 this.$spinner.style.visibility = "visible";
             });
 
             this.addEventListener("response", _ => {
-                //if (!--requests) {
                 this.$spinner.style.visibility = "hidden";
-                //}
             });
         }
 
@@ -187,11 +187,6 @@
 
             this.addEventListener("subtitle-change", (e => {
                 this.$subtitle.innerHTML = ":&nbsp;" + e.detail.subtitle;
-            }).bind(this));
-
-            this.addEventListener("retest", (e => {
-                console.log(e.detail);
-                this.$programs.testRun = e.detail.testRun;
             }).bind(this));
 
             this.bindProgressIndication();
@@ -214,7 +209,9 @@
                 const api = await this.fetchResourceTypes(newValue);
                 this.$programs.api = api.Programs;
                 this.$programs.configProfilesHref = api["Config Profiles"].href;
-                this.$programs.apiBase = this.$testRuns.apiBase = newValue;
+                this.$programs.apiBase
+                    = this.$testRuns.apiBase
+                    = newValue;
                 this.$testRuns.api = api["Test Runs"];
                 this.init();
                 break;
@@ -225,7 +222,7 @@
             this.$subtitle.innerHTML = "";
         }
 
-        async init() {
+        async init(testRun = null) {
             const page = this.$route.data.page;
             this.$mainMenu.selected = page;
 
