@@ -57,13 +57,40 @@
             this.idPredicate = x => (
                 x["id"] === this.$route.data["id"]
             );
+
+            this.addEventListener(
+                "testrun-changed", e => this.subtitleChange(e.detail.testRun)
+            );
         }
 
         resourceReceivedPipeline(r) { }
 
-        async init() {
+        subtitleChange(testRun) {
             let subtitle = "Test Runs";
 
+            if (testRun) {
+                subtitle += `&nbsp;&raquo; ${
+                    testRun.program_name
+                } (${
+                    Format.testRunLabel(testRun)
+                }) &raquo; ${
+                    new Date(testRun.created).toLocaleString()
+                } &mdash; ${(testRun.status === "complete"
+                        ? testRun.num_failures > 0
+                            ? "failed"
+                            : "success"
+                        : testRun.status
+                ).toUpperCase()}`
+            }
+            this.dispatchEvent(new CustomEvent("subtitle-change", {
+                detail: {
+                    subtitle: subtitle
+                },
+                composed: true
+            }));
+        }
+
+        async init() {
             super.init();
 
             this.resultSet = {};
@@ -78,18 +105,7 @@
                 );
                 this.$detail.appendChild($testRun);
                 this.$pages.select("detail");
-                subtitle += `&nbsp;&raquo; ${
-                    testRun.program_name
-                } (${
-                    Format.testRunLabel(testRun)
-                }) &raquo; ${
-                    new Date(testRun.created).toLocaleString()
-                } &mdash; ${(testRun.status === "complete"
-                        ? testRun.num_failures > 0
-                            ? "failed"
-                            : "success"
-                        : testRun.status
-                ).toUpperCase()}`
+                this.subtitleChange(testRun);
                 $testRun.init();
             } else {
                 const testRuns = await this.resources;
@@ -102,13 +118,8 @@
                 });
 
                 this.$pages.select("master");
+                this.subtitleChange();
             }
-            this.dispatchEvent(new CustomEvent("subtitle-change", {
-                detail: {
-                    subtitle: subtitle
-                },
-                composed: true
-            }));
         }
 
         appendTestRun(testRun) {

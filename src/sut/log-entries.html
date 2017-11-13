@@ -54,6 +54,9 @@
             Object.defineProperty(this, "_href", {
                 value: href
             });
+        }
+
+        init() {
             this.poll();
         }
 
@@ -63,6 +66,10 @@
         }
 
         poll() {
+
+            if (this.complete)
+                return;
+
             const url = `${
                 this.href
             }&order=created&direction=asc&offset=${
@@ -96,6 +103,8 @@
                             _ => this.poll(),
                             data.results.length ? 500 : 1000
                         );
+                    } else {
+                        this.complete = true;
                     }
                 }
             });

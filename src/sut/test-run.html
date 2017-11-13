@@ -145,8 +145,17 @@
                 else {
                     resp.json().then(data => {
                         this.testRun = data;
-                        if (this.testRun.status !== "running")
-                            this.init();
+                        if (this.testRun.status !== "running") {
+                            this.initSections();
+
+                            this.dispatchEvent(new CustomEvent("testrun-changed", {
+                                detail: {
+                                    testRun: this.testRun
+                                },
+                                bubbles: true,
+                                composed: true
+                            }));
+                        }
                     });
                 }
             });
@@ -189,7 +198,7 @@
             this.$checkpoints.value += JSON.stringify(checkpoints.results, false, 4);
         }
 
-        async init() {
+        initSections() {
             const tr = this.testRun;
 
             if (tr.status !== "running")
@@ -198,10 +207,16 @@
             this.initSummary();
             this.initCheckpoints();
             this.$logEntries.href = tr["related-resources"]["log-entries"];
-            
+
             this.$configuration.setAttribute("readonly", true);
             this.$configuration.value = JSON.stringify(tr.env, false, 4);
-            this.$configuration.focus();
+
+        }
+
+        async init() {
+            const tr = this.testRun;
+
+            this.initSections();
 
             if (tr.status === "running")
                 this.$menu.select("logs");
@@ -286,7 +301,12 @@
             );
             this.$menu.addEventListener(
                 "selected-changed",
-                e => this.$pages.select(e.target.selected)
+                (e => {
+                    console.log(e.target.selected);
+                    if (e.target.selected === "logs")
+                        this.$logEntries.init();
+                    this.$pages.select(e.target.selected);
+                }).bind(this)
             );
 
             ["$configuration", "$summary", "$checkpoints"].forEach(x =>
