@@ -92,7 +92,8 @@
                         const message = entry.message.length > 140
                             ? entry.message.substring(0, 140) + "..."
                             : entry.message;
-                        this.$editor.value += message + "\n";
+                        console.log(this.$editor.value);
+                        this.$editor.value = [this.$editor.value, message, "\n"].join("");
                     });
                     console.log(this.status);
                     if (
