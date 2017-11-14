@@ -2,6 +2,7 @@
 <link rel="import" href="/src/sut/input/text.html">
 <link rel="import" href="/src/sut/input/named-list.html">
 <link rel="import" href="/src/sut/input/document.html">
+<link rel="import" href="/src/sut/log-entries.html">
 
 <link rel="import" href="/bower_components/paper-button/paper-button.html">
 <link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">
@@ -73,8 +74,7 @@
                         wrapmode id="checkpoints"></juicy-ace-editor>
                 </div>
                 <div name="logs">
-                    <juicy-ace-editor theme="ace/theme/chrome"
-                        wrapmode id="logs"></juicy-ace-editor>
+                    <sut-log-entries id="log-entries"></sut-log-entries>
                 </div>
             </iron-pages>
             <div id="all"></div>
@@ -115,8 +115,8 @@
                 $checkpoints: {
                     value: this.shadowRoot.getElementById("checkpoints")
                 },
-                $logs: {
-                    value: this.shadowRoot.getElementById("logs")
+                $logEntries: {
+                    value: this.shadowRoot.getElementById("log-entries")
                 }
             });
 
@@ -128,8 +128,36 @@
 
         get testRun() { return this._testRun }
         set testRun(testRun) {
-            Object.defineProperty(this, "_testRun", {
-                value: testRun
+            this._testRun = testRun;
+            if (testRun.status === "running")
+                setTimeout(_ => this.poll(), 2000);
+            this.$logEntries.status = testRun.status;
+        }
+
+        poll() {
+            const req = new Request(this.testRun.href);
+            fetch(req, {
+                method: "GET",
+                credentials: "same-origin"
+            }).then(resp => {
+                if (!resp.ok)
+                    throw resp;
+                else {
+                    resp.json().then(data => {
+                        this.testRun = data;
+                        if (this.testRun.status !== "running") {
+                            this.initSections();
+
+                            this.dispatchEvent(new CustomEvent("testrun-changed", {
+                                detail: {
+                                    testRun: this.testRun
+                                },
+                                bubbles: true,
+                                composed: true
+                            }));
+                        }
+                    });
+                }
             });
         }
 
@@ -170,21 +198,7 @@
             this.$checkpoints.value += JSON.stringify(checkpoints.results, false, 4);
         }
 
-        async initLogs() {
-            const logs = await this.relatedResources(
-                "log-entries", "&order=created&direction=asc"
-            );
-            logs.results.forEach(log => {
-                let level = log.level.toUpperCase();
-                let len = level.length;
-                while (len++ < 5)
-                    level += " ";
-                this.$logs.value += level + ": ";
-                this.$logs.value += log.message + "\n";
-            });
-        }
-
-        async init() {
+        initSections() {
             const tr = this.testRun;
 
             if (tr.status !== "running")
@@ -192,11 +206,17 @@
 
             this.initSummary();
             this.initCheckpoints();
-            this.initLogs();
-            
+            this.$logEntries.href = tr["related-resources"]["log-entries"];
+
             this.$configuration.setAttribute("readonly", true);
             this.$configuration.value = JSON.stringify(tr.env, false, 4);
-            this.$configuration.focus();
+
+        }
+
+        async init() {
+            const tr = this.testRun;
+
+            this.initSections();
 
             if (tr.status === "running")
                 this.$menu.select("logs");
@@ -281,10 +301,15 @@
             );
             this.$menu.addEventListener(
                 "selected-changed",
-                e => this.$pages.select(e.target.selected)
+                (e => {
+                    console.log(e.target.selected);
+                    if (e.target.selected === "logs")
+                        this.$logEntries.init();
+                    this.$pages.select(e.target.selected);
+                }).bind(this)
             );
 
-            ["$configuration", "$summary", "$checkpoints", "$logs"].forEach(x =>
+            ["$configuration", "$summary", "$checkpoints"].forEach(x =>
                 this[x].addEventListener(
                     "editor-ready",
                     e => this.editorReady(e.target.container.env.editor)
