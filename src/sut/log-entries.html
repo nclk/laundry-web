@@ -89,8 +89,8 @@
                 if (len || this.status === "running") {
                     this.currentOffset += len;
                     data.results.forEach(entry => {
-                        const message = entry.message.length > 140
-                            ? entry.message.substring(0, 140) + "..."
+                        const message = entry.message.length > 255
+                            ? entry.message.substring(0, 255) + "..."
                             : entry.message;
                         console.log(this.$editor.value);
                         this.$editor.value = [this.$editor.value, message, "\n"].join("");
