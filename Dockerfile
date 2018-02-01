@@ -1,5 +1,10 @@
 FROM nginx:latest
 
+ENV DOLLAR=$
+ENV SUTWEB_VERSION=1.0.0
+ENV SUT_API_PROTOCOL=https
+ENV SUT_API_HOST=localhost
+
 WORKDIR /web
 ADD . /web
 

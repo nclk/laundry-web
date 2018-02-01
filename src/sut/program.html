@@ -297,7 +297,9 @@
                     $input = new Sut.Input.NamedListInput(cp, defaultValue);
                     break;
                 case "document":
-                    $input = new Sut.Input.DocumentInput(cp, defaultValue);
+                    $input = new Sut.Input.DocumentInput(
+			    cp, defaultValue, docMode(cp)
+		    );
                     break;
                 default:
                     $input = new Sut.Input.Input(cp, defaultValue);
@@ -322,11 +324,12 @@
             const body = {
                 program_name: this.program.name,
                 harvest_keys: [ "$bot" ],
-                env: [
-                    this.inputs.map(x => x.value).reduce(
-                        (p, c) => Object.assign(p, c)
-                    )
-                ]
+		env: this.inputs.map(x => x.value)
+                //env: [
+                //    this.inputs.map(x => x.value).reduce(
+                //        (p, c) => Object.assign(p, c)
+                //    )
+                //]
             };
             const req = new Request(
                 this.apiBase + "/actions/run"
@@ -382,6 +385,9 @@
     }
     function cpType(cp) {
         return cp.meta && cp.meta.widget && cp.meta.widget.type;
+    }
+    function docMode(cp) {
+    	return cp.meta && cp.meta.widget && cp.meta.widget.mode || "json";
     }
 
 })()

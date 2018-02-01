@@ -75,9 +75,9 @@
 
         get value() {
             return {
-                [this.$sutInput.configProfile.name]: JSON.parse(
-                    this.$input.value
-                )
+                [this.$sutInput.configProfile.name]: (
+                    this.mode === "yaml" ? jsyaml.load : JSON.parse
+                )(this.$input.value)
             };
         }
 
