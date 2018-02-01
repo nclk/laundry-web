@@ -3,6 +3,7 @@
 <link rel="import" href="/src/sut/input/named-list.html">
 <link rel="import" href="/src/sut/input/document.html">
 <link rel="import" href="/src/sut/log-entries.html">
+<link rel="import" href="/src/sut/checkpoints.html">
 
 <link rel="import" href="/bower_components/paper-button/paper-button.html">
 <link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">
@@ -70,8 +71,9 @@
                         id="configuration"></juicy-ace-editor>
                 </div>
                 <div name="checkpoints">
-                    <juicy-ace-editor theme="ace/theme/chrome"
-                        wrapmode id="checkpoints"></juicy-ace-editor>
+                    <!-- <juicy-ace-editor theme="ace/theme/chrome"
+                        wrapmode id="checkpoints"></juicy-ace-editor> -->
+                    <sut-checkpoints id="checkpoints"></sut-checkpoints>
                 </div>
                 <div name="logs">
                     <sut-log-entries id="log-entries"></sut-log-entries>
@@ -181,13 +183,14 @@
 
         async initSummary() {
             const harvests = await this.relatedResources("harvests");
+            this.$summary.value += `*** ${this.testRun.program_name.toUpperCase()} ***:`;
             harvests.results.length && harvests.results[0].data.forEach(r => {
                 this.$summary.value += "\n" + r.title.toUpperCase() + "\n";
                 r.fields.forEach(f => {
                     this.$summary.value += f.title + "\n";
                     this.$summary.value += f.value + "\n\n";
                 });
-                this.$summary.value += "\n\n\n";
+                //this.$summary.value += "\n\n\n";
             });
         }
 
@@ -303,8 +306,9 @@
                 "selected-changed",
                 (e => {
                     console.log(e.target.selected);
-                    if (e.target.selected === "logs")
+                    if (e.target.selected === "logs") {
                         this.$logEntries.init();
+                    }
                     this.$pages.select(e.target.selected);
                 }).bind(this)
             );

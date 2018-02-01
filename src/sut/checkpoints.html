@@ -1,0 +1,294 @@
+<link rel="import" href="/lib/nclk/hoquet.html">
+<link rel="import" href="/src/sut/paginator.html">
+
+<link rel="import" href="/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+<link rel="import" href="/bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="/bower_components/iron-icons/maps-icons.html">
+<link rel="import" href="/bower_components/paper-spinner/paper-spinner-lite.html">
+<link rel="import" href="/bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+
+<template>
+    <style>
+    :host {
+    }
+    #log {
+        background-color: #ccc;
+        background-color: #333;
+        padding: 15px;
+        overflow: auto;
+    }
+    p.log-entry {
+        margin: 0px;
+        padding: 0px;
+        color: #eee;
+        font-family: monospace;
+        overflow: hidden;
+        word-wrap: break-word;
+        size: 12pt;
+    }
+    p.log-entry.debug {
+        color: #aaa;
+    }
+    p.log-entry.warn {
+        color: #ff5;
+    }
+    #scroll-buttons {
+        display: inline-block;
+        margin: 0 0 5px 0;
+    }
+    #scroll-buttons ul {
+        list-style: none outside none;
+        margin: 0; padding: 0;
+    }
+    #scroll-buttons ul li {
+        display: inline-block;
+    }
+    .scroller {
+        background: linear-gradient(145deg, #47f, #7bf);
+        background: linear-gradient(145deg, #f74, #fb7);
+        background: linear-gradient(145deg, #fff, #ddf);
+        color: #333;
+    }
+    #follow-item {
+        float: left;
+        margin: 9px 20px 0 20px;
+    }
+    </style>
+
+    <sut-paginator id="paginator">
+        <div slot="before-page-controls" id="scroll-buttons">
+                <ul>
+                    </li>
+                        <paper-button raised class="scroller" id="top">
+                            Scroll to top
+                        </paper-button>
+                    </li>
+                    </li>
+                        <paper-button raised class="scroller" id="bottom">
+                            Scroll to bottom
+                        </paper-button>
+                    </li>
+                </ul>
+        </div>
+        <div slot="after-page-controls" id="follow-item">
+            <paper-checkbox id="follow">FOLLOW</paper-checkbox>
+        </div>
+        <div slot="resultset" id="log"></div>
+    </sut-paginator>
+
+    <!-- <div>
+        <div id="toolbar">
+            <ul>
+                </li>
+                    <paper-button raised class="scroller" id="top">
+                        Scroll to top
+                    </paper-button>
+                </li>
+                </li>
+                    <paper-button raised class="scroller" id="bottom">
+                        Scroll to bottom
+                    </paper-button>
+                </li>
+                <li>
+                    <sut-paginator id="paginator"></sut-paginator>
+                </li>
+
+                <li id="follow-item">
+                    <paper-checkbox id="follow">Follow</paper-checkbox>
+                </li>
+            </ul>
+        </div>
+
+        <div id="log"></div>
+    </div> -->
+</template>
+
+<script>
+
+(() => {
+
+    const tagsToReplace = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;'
+    };
+
+    //class LogEntries extends Nclk.Hoquet(HTMLElement) {
+
+    //    constructor() {
+    //        super();
+    //        this.render();
+    //        Object.defineProperties(this, {
+    //            $log: {
+    //                value: this.shadowRoot.getElementById("log")
+    //            },
+    //            $follow: {
+    //                value: this.shadowRoot.getElementById("follow")
+    //            },
+    //            $top: {
+    //                value: this.shadowRoot.getElementById("top")
+    //            },
+    //            $bottom: {
+    //                value: this.shadowRoot.getElementById("bottom")
+    //            },
+    //            $paginator: {
+    //                value: this.shadowRoot.getElementById("paginator")
+    //            }
+    //        });
+
+    //        this.currentOffset = 0;
+    //        this.perPage = 500;
+
+    //        // TODO: this is obviously a hack, but I still don't know how to
+    //        // do it with plain CSS.
+    //        window.addEventListener("resize", _ => this.resize());
+    //        this.resize();
+
+    //        this.$follow.addEventListener("change", e => {
+    //            e.target.checked && this.scrollToBottom();
+    //        });
+    //        this.$top.addEventListener("click", e => this.scrollToTop());
+    //        this.$bottom.addEventListener("click", e => this.scrollToBottom());
+
+    //        this.$paginator.addEventListener(
+    //            "page-changed", e => this.init(e.detail.page)
+    //        );
+    //    }
+
+    //    scrollToBottom() {
+    //        this.$log.scrollTop = this.$log.scrollHeight;
+    //    }
+
+    //    scrollToTop() {
+    //        this.$follow.checked = false;
+    //        this.$log.scrollTop = 0;
+    //    }
+
+    //    resize() {
+    //        let w = window,
+    //            d = document,
+    //            e = d.documentElement,
+    //            g = d.getElementsByTagName('body')[0],
+    //            x = w.innerWidth || e.clientWidth || g.clientWidth,
+    //            y = w.innerHeight|| e.clientHeight || g.clientHeight;
+
+    //        this.$log.style.height = `${parseInt(y * 0.7)}px`;
+    //    }
+
+    //    get href() { return this._href; }
+    //    set href(href) {
+    //        Object.defineProperty(this, "_href", {
+    //            value: href
+    //        });
+    //    }
+
+    //    init(page = 1) {
+    //        this.$log.innerHTML = "";
+    //        this.currentPage = page;
+    //        this.currentOffset = 0 + ((page-1) * this.perPage);
+    //        this.remaining = this.perPage;
+    //        this.complete = false;
+    //        this.$follow.checked = this.status === "running";
+    //        this.poll();
+    //    }
+
+    //    get status() { return this._status ? this._status : "running"; }
+    //    set status(status) {
+    //        this._status = status;
+    //    }
+
+    //    poll() {
+
+    //        if (this.complete)
+    //            return;
+
+    //        const url = `${
+    //            this.href
+    //        }&order=created&direction=asc&offset=${
+    //            this.currentOffset
+    //        }&page=${
+    //            this.currentPage
+    //        }&per-page=${this.remaining}`;
+
+    //        const req = new Request(url);
+
+    //        this.remaining && Utils.fetch(this, req, {
+    //            method: "GET",
+    //            credentials: "same-origin"
+    //        }, resp => {
+    //            throw resp;
+    //        }, data => {
+    //            // append entries to log entries page
+    //            const len = data.length;
+    //            this.remaining -= len;
+    //            this.initPaginator(data);
+
+    //            if (len || this.status === "running") {
+    //                this.currentOffset += len;
+    //                this.appendResults(data.results);
+
+    //                if (
+    //                    this.remaining &&
+    //                    ((this.currentOffset < data.count) ||
+    //                        this.status === "running")
+    //                ) {
+    //                    setTimeout(
+    //                        _ => this.poll(),
+    //                        data.results.length ? 500 : 1000
+    //                    );
+    //                } else {
+    //                    if (data.next && this.$follow.checked) {
+    //                        this.init(data.next);
+    //                    } else {
+    //                        this.complete = true;
+    //                        this.$follow.checked = false;
+    //                        this.$follow.disabled = true;
+    //                    }
+    //                }
+    //            }
+    //        });
+    //    }
+
+    //    replaceTag(tag) {
+    //        return tagsToReplace[tag] || tag;
+    //    }
+    //    
+    //    safe_tags_replace(str) {
+    //        return str.replace(/[&<>]/g, this.replaceTag);
+    //    }
+
+    //    initPaginator(data) {
+    //        const paginatorData = Object.assign({}, data);
+    //        paginatorData["per-page"] = this.perPage;
+    //        this.$paginator.init(paginatorData);
+    //    }
+
+    //    appendResults(results) {
+    //        let lastStatus = this.status;
+    //        results.forEach(entry => {
+    //            //const message = entry.message.length > 255
+    //            //    ? entry.message.substring(0, 255) + "..."
+    //            //    : entry.message;
+    //            //this.$log.value = [this.$log.value, message, "\n"].join("");
+    //            const $result = document.createElement("p");
+    //            $result.innerHTML = this.safe_tags_replace(entry.message);
+    //            $result.classList.add("log-entry");
+    //            $result.classList.add(entry.level);
+    //            this.$log.appendChild($result);
+    //            this.$follow.checked
+    //                && this.scrollToBottom();
+    //            lastStatus = this.status;
+    //        });
+    //    }
+
+    //}
+
+    //window.Sut.LogEntries = LogEntries;
+    //window.customElements.define("sut-log-entries", LogEntries);
+
+})()
+</script>

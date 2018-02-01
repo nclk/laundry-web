@@ -1,0 +1,183 @@
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+
+<template>
+    <style>
+    #toolbar {
+        margin: 0 0 5px 0;
+        display: inline-block;
+    }
+    #toolbar ul {
+        list-style: none outside none;
+        margin: 0; padding: 0;
+        display: inline-block;
+    }
+    #toolbar ul li {
+        display: inline-block;
+    }
+    </style>
+    <div>
+        <div id="toolbar">
+            <slot name="before-page-controls"></slot>
+            <span id="page-controls"></span>
+            <slot name="after-page-controls"></slot>
+        </div>
+        <slot name="resultset"></slot>
+    </div>
+</template>
+
+<script>
+
+(() => {
+    class Paginator extends Nclk.Hoquet(HTMLElement) {
+
+        constructor() {
+            super();
+            this.render();
+            Object.defineProperties(this, {
+                $pageControls: {
+                    value: this.shadowRoot.getElementById("page-controls")
+                },
+                $resultset: {
+                    value: this.shadowRoot.getElementById("resultset")
+                }
+            });
+        }
+
+        init() {
+            this.renderPageControls();
+            ["first","prev","next","last"].forEach(x => {
+                this[`$${x}`] = this.shadowRoot.getElementById(x);
+                this[`$${x}`].addEventListener("click", e => this.changePage(x));
+            });
+            Array.from(this.shadowRoot.querySelectorAll(".page")).forEach($pg => {
+                $pg.addEventListener("click", e => {
+                    this.changePage(e.target.dataset["page"]);
+                });
+            });
+        }
+
+        get resultSet() { return this._resultSet; }
+        set resultSet(rs) {
+            const initialized = !!this._resultSet;
+            let prevNumPages = this.numPages;
+
+            this._resultSet = rs;
+
+            if (!initialized)
+                this.init();
+            else {
+                const $pages = this.shadowRoot.querySelectorAll(".page");
+                const $parent = $pages.length && $pages[0].parentNode.parentNode;
+
+                if (this.numPages > prevNumPages) {
+                    // add additional pages
+                    while (prevNumPages < this.numPages) {
+                        const $tmp = document.createElement("div");
+                        $tmp.innerHTML = this.hoquet(this.page(prevNumPages + 1));
+                        const $ctrl = $tmp.firstChild;
+                        $parent.insertBefore($ctrl, this.$next.parentNode);
+                        $ctrl.addEventListener("click", e => {
+                            this.changePage(e.target.dataset["page"]);
+                        });
+                        prevNumPages++;
+                    }
+                } else if (this.numPages < prevNumPages) {
+                    // reduce the number of pages
+                    while (prevNumPages > this.numPages) {
+                        const $last = $pages[prevNumPages - 1];
+                        $parent.removeChild($last);
+                        prevNumPages--;
+                    }
+                }
+            }
+            this.disableUnreachableControls();
+        }
+
+        disableUnreachableControls(all = false) {
+            Array.from(this.$pageControls.firstChild.childNodes).forEach((x, idx) => {
+                const $ctrl = x.firstChild;
+                const page = $ctrl.id || parseInt($ctrl.dataset["page"]);
+                const current = this.resultSet.current;
+                const isFirst = current === 1;
+                const isLast = current === this.resultSet.last;
+                $ctrl.disabled = all || !!(
+                    current === page
+                    || (~["first", "prev"].indexOf(page) && isFirst)
+                    || (~["last", "next"].indexOf(page) && isLast)
+                );
+            });
+        }
+
+        changePage(page) {
+            let pg = !isNaN(parseInt(page))
+                ? parseInt(page)
+                : page === "first"
+                ? 1
+                : page === "last"
+                ? this.resultSet.last
+                : page === "prev"
+                ? this.resultSet.previous
+                : page === "next"
+                ? this.resultSet.next
+                // does this essentially mean do nothing?
+                : this.resultSet.current;
+
+            this.dispatchEvent(new CustomEvent("page-changed", {
+                composed: true,
+                bubbles: true,
+                detail: {
+                    page: pg || 1
+                }
+            }));
+        }
+
+        get numPages() {
+            if (!this.resultSet)
+                return 0;
+            const count = this.resultSet.count || 0;
+            const perPage = this.resultSet["per-page"] || 1;
+            return Math.ceil(count / perPage);
+        }
+
+        pageControl(attrs, body) {
+            return ["li"
+            ,   ["paper-button"
+                ,   attrs
+                ,   body
+                ]
+            ];
+        }
+
+        page(page) {
+            return this.pageControl({
+                class: "page",
+                raised: true,
+                "data-page": page
+            }, page);
+        }
+
+        get pageList() {
+            return new Array(this.numPages).fill().map((_, idx) => {
+                return this.page(idx + 1);
+            })
+        }
+
+        renderPageControls() {
+            this.$pageControls.innerHTML = this.hoquet([
+                "ul"
+                ,   this.pageControl({id: "first", raised: true}, "<<")
+                ,   this.pageControl({id: "prev", raised: true}, "<")
+                ,   this.pageList
+                ,   this.pageControl({id: "next", raised: true}, ">")
+                ,   this.pageControl({id: "last", raised: true}, ">>")
+            ]);
+        }
+
+    }
+
+    window.Sut.Paginator = Paginator;
+    window.customElements.define("sut-paginator", Paginator);
+
+})();
+
+</script>
