@@ -63,6 +63,9 @@
         text-decoration: underline;
         color: #faa;
     }
+    #logout paper-item {
+        color: #fa0;
+    }
     </style>
 
     <app-location id="location"></app-location>
@@ -84,6 +87,9 @@
                 </a>
                 <a tabindex="-1" href="/test-runs" name="test-runs">
                     <paper-item>Test Runs</paper-item>
+                </a>
+                <a id="logout" href="/admin/logout">
+                    <paper-item>Log out</paper-item>
                 </a>
             </iron-selector>
         </app-drawer>
@@ -181,6 +187,8 @@
 
             this.$route.route = this.$location.route;
             this.$location.addEventListener("route-changed", (_ => {
+                if (this.$location.route.path === "/admin/logout")
+                    return window.location = this.$location.route.path;
                 this.$route.route = this.$location.route;
                 this.init();
             }).bind(this));

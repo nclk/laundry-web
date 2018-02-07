@@ -34,6 +34,9 @@
         border: 1px dotted #aaf;
         padding: 10px;
     }
+    #menu paper-item {
+        cursor: pointer;
+    }
     #all {
         display: none;
     }
@@ -58,6 +61,7 @@
                 <paper-item name="configuration">Configuration</paper-item>
                 <paper-item name="checkpoints">Checkpoints</paper-item>
                 <paper-item name="logs">Logs</paper-item>
+                <paper-item name="archive">Archive</paper-item>
             </iron-selector>
         </div>
         <div class="content">
@@ -78,6 +82,9 @@
                 <div name="logs">
                     <sut-log-entries id="log-entries"></sut-log-entries>
                 </div>
+                <div name="archive">
+                    <sut-archive id="archive"></sut-archive>
+                </div>
             </iron-pages>
             <div id="all"></div>
         </div>
@@ -92,34 +99,21 @@
         constructor(testRun, apiBase) {
             super();
             this.render();
-            Object.defineProperties(this, {
-                $pages: {
-                    value: this.shadowRoot.getElementById("pages")
-                },
-                $allPage: {
-                    value: this.shadowRoot.getElementById("all")
-                },
-                $menu: {
-                    value: this.shadowRoot.getElementById("menu")
-                },
-                $rerunButton: {
-                    value: this.shadowRoot.getElementById("rerun")
-                },
-                $stopButton: {
-                    value: this.shadowRoot.getElementById("stop")
-                },
-                $configuration: {
-                    value: this.shadowRoot.getElementById("configuration")
-                },
-                $summary: {
-                    value: this.shadowRoot.getElementById("summary")
-                },
-                $checkpoints: {
-                    value: this.shadowRoot.getElementById("checkpoints")
-                },
-                $logEntries: {
-                    value: this.shadowRoot.getElementById("log-entries")
-                }
+
+            [ ["pages"]
+            , ["all", "allPage"]
+            , ["menu"]
+            , ["rerun", "rerunButton"]
+            , ["stop", "stopButton"]
+            , ["configuration"]
+            , ["summary"]
+            , ["checkpoints"]
+            , ["log-entries", "logEntries"]
+            , ["archive"]
+            ].forEach(x => {
+                Object.defineProperty(this, `$${x[1] || x[0]}`, {
+                    value: this.shadowRoot.getElementById(x[0])
+                });
             });
 
             this.bind();
@@ -214,6 +208,9 @@
             this.$configuration.setAttribute("readonly", true);
             this.$configuration.value = JSON.stringify(tr.env, false, 4);
 
+            this.$archive.innerHTML = `
+                <a href="/resources" target="_blank">archive</a>
+            `;
         }
 
         async init() {

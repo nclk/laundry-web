@@ -79,7 +79,7 @@
 
             super.init();
             if (this.$route.active) {
-                const testRun = ("testRun" in history.state) && history.state.testRun;
+                const testRun = history.state && ("testRun" in history.state) && history.state.testRun;
                 const $program = new Sut.Program(
                     await this.selectedResource, this.configProfilesHref, this.apiBase);
                 this.$detail.firstChild && this.$detail.removeChild(

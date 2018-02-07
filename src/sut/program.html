@@ -271,7 +271,7 @@
             const prog = this.program;
             const configProfiles = (await this.configProfiles).results;
             const $allSelector = document.createElement("paper-item");
-            const testRun = ("testRun" in history.state) && history.state.testRun;
+            const testRun = history.state && ("testRun" in history.state) && history.state.testRun;
 
             this.initLastRuns();
 
@@ -324,7 +324,8 @@
             const body = {
                 program_name: this.program.name,
                 harvest_keys: [ "$bot" ],
-		env: this.inputs.map(x => x.value)
+                env: this.inputs.map(x => x.value),
+                seed: 8031
                 //env: [
                 //    this.inputs.map(x => x.value).reduce(
                 //        (p, c) => Object.assign(p, c)

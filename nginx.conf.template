@@ -98,7 +98,7 @@ http {
 		proxy_set_header Content-Length "";
 		proxy_set_header X-Original-URI ${DOLLAR}request_uri;
 	}
-	location /api {
+	location ~ (/api|/resources) {
 		auth_request /auth;
 		proxy_pass http://api;
         	proxy_set_header X-Original-Host ${DOLLAR}host;
@@ -122,7 +122,6 @@ http {
 	}
 	location /admin {
 		proxy_pass http://auth;
-		proxy_set_header X-Original-URI ${DOLLAR}http_x_original_uri;
 	}
 	location = /version {
 		default_type text/plain;
@@ -131,8 +130,7 @@ http {
 
 	error_page 401 = @error401;
 	location @error401 {
-		add_header X-Original-URI ${DOLLAR}request_uri;
-		return 302 /admin/login;
+		return 302 /admin/login?next=${DOLLAR}request_uri;
 	}
 
     }

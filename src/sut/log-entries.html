@@ -25,6 +25,12 @@
         background-color: #333;
         padding: 15px;
         overflow: auto;
+
+        -ms-overflow-style: none;  // IE 10+
+        overflow: -moz-scrollbars-none;  // Firefox
+    }
+    #log::-webkit-scrollbar {
+        display: none;  // Safari and Chrome
     }
     p.log-entry {
         margin: 0px;
@@ -33,6 +39,7 @@
         font-family: monospace;
         overflow: hidden;
         word-wrap: break-word;
+        white-space: pre-wrap;
         size: 12pt;
     }
     p.log-entry.debug {
@@ -40,6 +47,13 @@
     }
     p.log-entry.warn {
         color: #ff5;
+    }
+    p.log-entry.error {
+        color: #f55;
+    }
+    p.log-entry.fatal {
+        color: #f00;
+        font-weight: bold;
     }
     #scroll-buttons {
         display: inline-block;
@@ -245,6 +259,8 @@
             this.remaining -= len;
             this.initPaginator(resultSet);
 
+            console.log("hate", resultSet);
+
             if (len || this.status === "running") {
                 this.currentOffset += len;
                 this.appendResults(resultSet.results);
@@ -255,7 +271,7 @@
                         this.status === "running")
                 ) {
                     clearTimeout(this.timeout);
-                    this.timeout = setTimeout(_ => this.fetchPage(), len ? 500 : 1000);
+                    this.timeout = setTimeout(_ => this.fetchPage(), len ? 500 : 2000);
                 } else {
                     if (resultSet.next && this.$follow.checked) {
                         this.init(resultSet.next);
